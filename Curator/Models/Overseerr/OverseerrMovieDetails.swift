@@ -47,7 +47,7 @@ struct OverseerrRelatedVideos: Codable, Sendable {
 }
 
 struct OverseerrVideo: Codable, Sendable, Identifiable {
-    let id: String
+    let id: Int
     let key: String?
     let name: String?
     let site: String?

@@ -43,7 +43,7 @@ struct MovieDetailView: View {
                 .padding(.horizontal, 60)
             }
         }
-        .ignoresSafeArea(edges: .top)
+        .ignoresSafeArea(edges: [.top, .horizontal])
         .toolbarBackground(.hidden, for: .navigationBar)
         .alert("Request", isPresented: $showRequestResult) {
             Button("OK") {}
@@ -117,16 +117,17 @@ struct MovieDetailView: View {
     }
 
     private var filteredProfiles: [QualityOption] {
-        var options: [QualityOption] = []
+        var fourK: QualityOption?
+        var tenEighty: QualityOption?
         for profile in viewModel.qualityProfiles {
             let name = profile.name.lowercased()
-            if name.contains("4k") || name.contains("2160") || name.contains("uhd") {
-                options.append(QualityOption(id: "4k", profileId: profile.id, label: "4K"))
-            } else if name.contains("1080") || name.contains("hd") && !name.contains("4k") {
-                options.append(QualityOption(id: "1080", profileId: profile.id, label: "1080p"))
+            if fourK == nil && (name.contains("4k") || name.contains("2160") || name.contains("uhd")) {
+                fourK = QualityOption(id: "4k", profileId: profile.id, label: "4K")
+            } else if tenEighty == nil && name.contains("1080") {
+                tenEighty = QualityOption(id: "1080", profileId: profile.id, label: "1080p")
             }
         }
-        return options
+        return [tenEighty, fourK].compactMap { $0 }
     }
 
     // MARK: - Content Sections
