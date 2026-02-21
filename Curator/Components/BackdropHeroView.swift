@@ -89,7 +89,7 @@ struct BackdropHeroView<Actions: View>: View {
             .padding(.horizontal, 60)
             .padding(.bottom, 20)
         }
-        .frame(height: 500)
+        .frame(height: 650)
         .clipped()
     }
 
@@ -106,12 +106,12 @@ struct BackdropHeroView<Actions: View>: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 500)
+            .frame(height: 650)
             .clipped()
         } else {
             Rectangle()
                 .fill(.quaternary)
-                .frame(height: 500)
+                .frame(height: 650)
         }
     }
 }

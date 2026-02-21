@@ -8,6 +8,7 @@ struct TVDetailView: View {
     let item: MediaItem
     @State private var showRequestResult = false
     @State private var requestResultMessage = ""
+    @State private var trailerToPlay: TrailerVideo?
 
     var body: some View {
         Group {
@@ -50,6 +51,9 @@ struct TVDetailView: View {
             Button("OK") {}
         } message: {
             Text(requestResultMessage)
+        }
+        .fullScreenCover(item: $trailerToPlay) { trailer in
+            TrailerSheet(videoKey: trailer.id)
         }
     }
 
@@ -295,14 +299,6 @@ struct TVDetailView: View {
     }
 
     private func openTrailer(key: String) {
-        guard let url = URL(string: "youtube://watch/\(key)") else { return }
-        UIApplication.shared.open(url) { success in
-            if !success {
-                Task { @MainActor in
-                    requestResultMessage = "Install the YouTube app to watch trailers."
-                    showRequestResult = true
-                }
-            }
-        }
+        trailerToPlay = TrailerVideo(id: key)
     }
 }

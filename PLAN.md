@@ -162,10 +162,13 @@ Curator/
 │   │   ├── MediaCard.swift                  # Poster card with .buttonStyle(.card) focus effects
 │   │   ├── MediaCardWide.swift              # Backdrop-based wide card for featured content
 │   │   ├── AvailabilityBadge.swift          # Green check / clock / partial overlay
+│   │   ├── BackdropHeroView.swift           # Full-width backdrop hero with poster, metadata, action buttons (650pt, ~60% screen)
+│   │   ├── FocusableCardButtonStyle.swift   # Custom tvOS focus card style
 │   │   ├── StatusPill.swift                 # "Available" / "Requested" / "Pending" text pill
 │   │   ├── MediaShelfView.swift             # Horizontal ScrollView + LazyHStack + .focusSection()
 │   │   ├── ShelfHeaderView.swift            # Title + "See All" button
 │   │   ├── DeviceCodeView.swift             # Shows Trakt code + URL prominently
+│   │   ├── YouTubePlayerView.swift          # TrailerSheet + AVPlayerViewController + YouTube stream extractor (WIP)
 │   │   ├── LoadingView.swift
 │   │   └── ErrorView.swift                  # Error state with retry button
 │   │

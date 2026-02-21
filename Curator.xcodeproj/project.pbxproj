@@ -64,6 +64,7 @@
 		DD2233445566778899001122 /* OverseerrPersonDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD1122334455667788990011 /* OverseerrPersonDetails.swift */; };
 		DD4455667788990011223344 /* PersonViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3344556677889900112233 /* PersonViewModel.swift */; };
 		DD6677889900112233445566 /* PersonDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD5566778899001122334455 /* PersonDetailView.swift */; };
+		EE2233445566778899001122 /* YouTubePlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1122334455667788990011 /* YouTubePlayerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -126,6 +127,7 @@
 		DD1122334455667788990011 /* OverseerrPersonDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverseerrPersonDetails.swift; sourceTree = "<group>"; };
 		DD3344556677889900112233 /* PersonViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonViewModel.swift; sourceTree = "<group>"; };
 		DD5566778899001122334455 /* PersonDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonDetailView.swift; sourceTree = "<group>"; };
+		EE1122334455667788990011 /* YouTubePlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubePlayerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -310,6 +312,7 @@
 				0F474E0233EAAE5C559D3E8F /* MediaShelfView.swift */,
 				55BD5D3A71CD09F746DCEBB6 /* ShelfHeaderView.swift */,
 				DA4905D1CBF660843892CEB5 /* StatusPill.swift */,
+				EE1122334455667788990011 /* YouTubePlayerView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -465,6 +468,7 @@
 				CF597DE717A6E76218C06076 /* TraktShow.swift in Sources */,
 				35AFF97193B99C3CEFE5BA84 /* TraktToken.swift in Sources */,
 				DB73F9994B85AC7000AF4231 /* UserDefaultsKeys.swift in Sources */,
+				EE2233445566778899001122 /* YouTubePlayerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
