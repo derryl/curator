@@ -7,6 +7,7 @@ struct TrailerVideo: Identifiable {
 
 struct TrailerSheet: View {
     let videoKey: String
+    @Environment(\.dismiss) private var dismiss
     @State private var streamURL: URL?
     @State private var failed = false
 
@@ -17,12 +18,12 @@ struct TrailerSheet: View {
                 TrailerPlayerView(url: streamURL)
                     .ignoresSafeArea()
             } else if failed {
-                VStack(spacing: 12) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.largeTitle)
-                    Text("Unable to load trailer")
-                }
-                .foregroundStyle(.secondary)
+                // Extraction failed — dismiss and open externally
+                Color.clear
+                    .onAppear {
+                        openInYouTubeApp()
+                        dismiss()
+                    }
             } else {
                 ProgressView()
             }
@@ -33,6 +34,17 @@ struct TrailerSheet: View {
             } else {
                 failed = true
             }
+        }
+    }
+
+    private func openInYouTubeApp() {
+        let youtubeAppURL = URL(string: "youtube://watch/\(videoKey)")!
+        let webURL = URL(string: "https://www.youtube.com/watch?v=\(videoKey)")!
+        let app = UIApplication.shared
+        if app.canOpenURL(youtubeAppURL) {
+            app.open(youtubeAppURL)
+        } else {
+            app.open(webURL)
         }
     }
 }
@@ -53,9 +65,78 @@ private struct TrailerPlayerView: UIViewControllerRepresentable {
 
 // MARK: - YouTube Stream Extraction
 
-private enum YouTubeStreamExtractor {
-    static func streamURL(for videoID: String) async -> URL? {
-        guard let pageURL = URL(string: "https://www.youtube.com/watch?v=\(videoID)") else { return nil }
+enum YouTubeStreamExtractor {
+    static func streamURL(for videoID: String, session: URLSession = .shared) async -> URL? {
+        // Strategy 1: Innertube API with ANDROID client (returns progressive MP4)
+        if let url = await extractViaInnertubeAndroid(videoID: videoID, session: session) {
+            return url
+        }
+
+        // Strategy 2 (fallback): HTML scraping
+        return await extractViaHTMLScraping(videoID: videoID, session: session)
+    }
+
+    // MARK: Strategy 1 – Innertube ANDROID client
+
+    private static func extractViaInnertubeAndroid(
+        videoID: String,
+        session: URLSession
+    ) async -> URL? {
+        guard let apiURL = URL(string: "https://www.youtube.com/youtubei/v1/player") else {
+            return nil
+        }
+
+        let body: [String: Any] = [
+            "context": [
+                "client": [
+                    "clientName": "ANDROID",
+                    "clientVersion": "19.09.37",
+                    "androidSdkVersion": 34,
+                    "hl": "en",
+                    "gl": "US",
+                ] as [String: Any],
+            ] as [String: Any],
+            "videoId": videoID,
+            "contentCheckOk": true,
+        ]
+
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: body) else {
+            return nil
+        }
+
+        var request = URLRequest(url: apiURL)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 15
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(
+            "com.google.android.youtube/19.09.37 (Linux; U; Android 14) gzip",
+            forHTTPHeaderField: "User-Agent"
+        )
+        request.httpBody = jsonData
+
+        guard let (data, response) = try? await session.data(for: request),
+              let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            return nil
+        }
+
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let streamingData = json["streamingData"] as? [String: Any] else {
+            return nil
+        }
+
+        return pickBestStream(from: streamingData)
+    }
+
+    // MARK: Strategy 2 – HTML scraping (fallback)
+
+    private static func extractViaHTMLScraping(
+        videoID: String,
+        session: URLSession
+    ) async -> URL? {
+        guard let pageURL = URL(string: "https://www.youtube.com/watch?v=\(videoID)") else {
+            return nil
+        }
 
         var request = URLRequest(url: pageURL)
         request.timeoutInterval = 15
@@ -65,19 +146,19 @@ private enum YouTubeStreamExtractor {
         )
         request.setValue("CONSENT=PENDING+999", forHTTPHeaderField: "Cookie")
 
-        guard let (data, response) = try? await URLSession.shared.data(for: request),
+        guard let (data, response) = try? await session.data(for: request),
               let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200,
               let html = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else {
             return nil
         }
 
-        // Strategy 1: Regex for HLS manifest URL (simplest, avoids JSON parsing)
+        // Sub-strategy A: Regex for HLS manifest URL
         if let url = extractHLSURL(from: html) {
             return url
         }
 
-        // Strategy 2: Parse full ytInitialPlayerResponse JSON
+        // Sub-strategy B: Parse full ytInitialPlayerResponse JSON
         if let playerResponse = extractPlayerResponse(from: html),
            let streamingData = playerResponse["streamingData"] as? [String: Any],
            let url = pickBestStream(from: streamingData) {
@@ -87,7 +168,7 @@ private enum YouTubeStreamExtractor {
         return nil
     }
 
-    // MARK: Strategy 1 – Regex extraction
+    // MARK: – Regex extraction
 
     private static func extractHLSURL(from html: String) -> URL? {
         let pattern = #""hlsManifestUrl"\s*:\s*"(https://manifest\.googlevideo\.com/[^"]+)""#
@@ -104,19 +185,16 @@ private enum YouTubeStreamExtractor {
         return URL(string: urlString)
     }
 
-    // MARK: Strategy 2 – JSON parsing
+    // MARK: – JSON parsing
 
     private static func extractPlayerResponse(from html: String) -> [String: Any]? {
-        // Flexible search: find the marker regardless of surrounding whitespace
         guard let markerRange = html.range(of: "ytInitialPlayerResponse") else { return nil }
 
-        // Find the first `{` after the marker (skips `= ` or `=` or ` = `)
         let afterMarker = html[markerRange.upperBound...]
         guard let braceRange = afterMarker.range(of: "{") else { return nil }
         let jsonStart = braceRange.lowerBound
         let remaining = html[jsonStart...]
 
-        // Find the end of the JSON statement (whichever terminator comes first)
         var endIndex: String.Index?
         for terminator in [";</script>", ";var ", ";\n"] {
             if let range = remaining.range(of: terminator) {
@@ -146,7 +224,7 @@ private enum YouTubeStreamExtractor {
         // Fall back to progressive formats (combined video + audio)
         if let formats = streamingData["formats"] as? [[String: Any]] {
             let best = formats
-                .filter { $0["url"] != nil }
+                .filter { $0["url"] is String }
                 .max { ($0["height"] as? Int ?? 0) < ($1["height"] as? Int ?? 0) }
             if let urlStr = best?["url"] as? String {
                 return URL(string: urlStr)
