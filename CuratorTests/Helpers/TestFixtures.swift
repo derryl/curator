@@ -215,7 +215,74 @@ enum TestFixtures {
 
     // MARK: - YouTube Innertube API Responses
 
+    /// Response with both adaptive (separate video+audio) and progressive (combined) formats.
+    /// Adaptive has 1080p video + 128kbps audio; progressive has 360p and 720p combined.
     static let youtubeInnertubeResponseJSON: Data = {
+        let json: [String: Any] = [
+            "streamingData": [
+                "adaptiveFormats": [
+                    [
+                        "itag": 137,
+                        "url": "https://rr1---sn-example.googlevideo.com/videoplayback?id=abc123&itag=137",
+                        "mimeType": "video/mp4; codecs=\"avc1.640028\"",
+                        "width": 1920,
+                        "height": 1080,
+                        "bitrate": 4000000,
+                        "quality": "hd1080",
+                    ] as [String: Any],
+                    [
+                        "itag": 136,
+                        "url": "https://rr1---sn-example.googlevideo.com/videoplayback?id=abc123&itag=136",
+                        "mimeType": "video/mp4; codecs=\"avc1.4d401f\"",
+                        "width": 1280,
+                        "height": 720,
+                        "bitrate": 2500000,
+                        "quality": "hd720",
+                    ] as [String: Any],
+                    [
+                        "itag": 140,
+                        "url": "https://rr1---sn-example.googlevideo.com/videoplayback?id=abc123&itag=140",
+                        "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"",
+                        "bitrate": 128000,
+                        "audioQuality": "AUDIO_QUALITY_MEDIUM",
+                    ] as [String: Any],
+                    [
+                        "itag": 249,
+                        "url": "https://rr1---sn-example.googlevideo.com/videoplayback?id=abc123&itag=249",
+                        "mimeType": "audio/webm; codecs=\"opus\"",
+                        "bitrate": 50000,
+                        "audioQuality": "AUDIO_QUALITY_LOW",
+                    ] as [String: Any],
+                ],
+                "formats": [
+                    [
+                        "itag": 18,
+                        "url": "https://rr1---sn-example.googlevideo.com/videoplayback?id=abc123&itag=18",
+                        "mimeType": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+                        "width": 640,
+                        "height": 360,
+                        "quality": "medium",
+                    ] as [String: Any],
+                    [
+                        "itag": 22,
+                        "url": "https://rr1---sn-example.googlevideo.com/videoplayback?id=abc123&itag=22",
+                        "mimeType": "video/mp4; codecs=\"avc1.64001F, mp4a.40.2\"",
+                        "width": 1280,
+                        "height": 720,
+                        "quality": "hd720",
+                    ] as [String: Any],
+                ],
+            ] as [String: Any],
+            "videoDetails": [
+                "videoId": "dQw4w9WgXcQ",
+                "title": "Test Video",
+            ] as [String: Any],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json)
+    }()
+
+    /// Response with only progressive formats (no adaptiveFormats).
+    static let youtubeInnertubeProgressiveOnlyJSON: Data = {
         let json: [String: Any] = [
             "streamingData": [
                 "formats": [

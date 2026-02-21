@@ -8,9 +8,76 @@ final class YouTubeStreamExtractorTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - Innertube ANDROID client (Primary Strategy)
+    // MARK: - Adaptive Format Selection (Max Quality)
 
-    func testInnertubeReturnsHighestResolutionProgressiveURL() async {
+    func testPrefersAdaptiveFormatsOverProgressive() async {
+        let session = TestFixtures.mockSession()
+
+        MockURLProtocol.requestHandler = { request in
+            let response = TestFixtures.httpResponse(url: request.url!)
+            return (response, TestFixtures.youtubeInnertubeResponseJSON)
+        }
+
+        let result = await YouTubeStreamExtractor.streamResult(for: "dQw4w9WgXcQ", session: session)
+
+        XCTAssertNotNil(result)
+        // Should pick 1080p adaptive video (itag=137) over 720p progressive (itag=22)
+        XCTAssertTrue(result!.videoURL.absoluteString.contains("itag=137"))
+        // Should have a separate audio URL (itag=140, highest bitrate audio)
+        XCTAssertNotNil(result!.audioURL)
+        XCTAssertTrue(result!.audioURL!.absoluteString.contains("itag=140"))
+    }
+
+    func testAdaptiveSelectsHighestResolutionVideo() async {
+        let session = TestFixtures.mockSession()
+
+        MockURLProtocol.requestHandler = { request in
+            let response = TestFixtures.httpResponse(url: request.url!)
+            return (response, TestFixtures.youtubeInnertubeResponseJSON)
+        }
+
+        let result = await YouTubeStreamExtractor.streamResult(for: "test", session: session)
+
+        XCTAssertNotNil(result)
+        // 1080p (itag=137) should be chosen over 720p (itag=136)
+        XCTAssertTrue(result!.videoURL.absoluteString.contains("itag=137"))
+    }
+
+    func testAdaptiveSelectsHighestBitrateAudio() async {
+        let session = TestFixtures.mockSession()
+
+        MockURLProtocol.requestHandler = { request in
+            let response = TestFixtures.httpResponse(url: request.url!)
+            return (response, TestFixtures.youtubeInnertubeResponseJSON)
+        }
+
+        let result = await YouTubeStreamExtractor.streamResult(for: "test", session: session)
+
+        XCTAssertNotNil(result)
+        // 128kbps (itag=140) should be chosen over 50kbps (itag=249)
+        XCTAssertTrue(result!.audioURL!.absoluteString.contains("itag=140"))
+    }
+
+    func testProgressiveOnlyReturnsNilAudioURL() async {
+        let session = TestFixtures.mockSession()
+
+        MockURLProtocol.requestHandler = { request in
+            let response = TestFixtures.httpResponse(url: request.url!)
+            return (response, TestFixtures.youtubeInnertubeProgressiveOnlyJSON)
+        }
+
+        let result = await YouTubeStreamExtractor.streamResult(for: "test", session: session)
+
+        XCTAssertNotNil(result)
+        // Progressive formats have combined video+audio, so audioURL should be nil
+        XCTAssertNil(result!.audioURL)
+        // Should pick the highest progressive format (720p, itag=22)
+        XCTAssertTrue(result!.videoURL.absoluteString.contains("itag=22"))
+    }
+
+    // MARK: - Legacy streamURL Convenience
+
+    func testStreamURLReturnsVideoURLFromAdaptiveFormats() async {
         let session = TestFixtures.mockSession()
 
         MockURLProtocol.requestHandler = { request in
@@ -21,9 +88,11 @@ final class YouTubeStreamExtractorTests: XCTestCase {
         let url = await YouTubeStreamExtractor.streamURL(for: "dQw4w9WgXcQ", session: session)
 
         XCTAssertNotNil(url)
-        // Should pick the 720p format (itag=22) over the 360p format (itag=18)
-        XCTAssertTrue(url!.absoluteString.contains("itag=22"))
+        // streamURL should return the videoURL from the adaptive result
+        XCTAssertTrue(url!.absoluteString.contains("itag=137"))
     }
+
+    // MARK: - Innertube ANDROID Client Request Format
 
     func testInnertubeRequestContainsANDROIDClientContext() async {
         let session = TestFixtures.mockSession()
@@ -119,13 +188,15 @@ final class YouTubeStreamExtractorTests: XCTestCase {
             return (response, Data())
         }
 
-        let url = await YouTubeStreamExtractor.streamURL(for: "abc123", session: session)
+        let result = await YouTubeStreamExtractor.streamResult(for: "abc123", session: session)
 
         // Should have tried innertube first, then HTML scraping
         XCTAssertTrue(requestPaths.contains("/youtubei/v1/player"))
         XCTAssertTrue(requestPaths.contains("/watch"))
-        XCTAssertNotNil(url)
-        XCTAssertTrue(url!.host?.contains("manifest.googlevideo.com") == true)
+        XCTAssertNotNil(result)
+        XCTAssertTrue(result!.videoURL.host?.contains("manifest.googlevideo.com") == true)
+        // HTML fallback returns combined streams, so audioURL should be nil
+        XCTAssertNil(result!.audioURL)
     }
 
     func testFallsBackToHTMLProgressiveFormats() async {
