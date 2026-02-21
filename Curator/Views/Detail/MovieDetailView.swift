@@ -2,8 +2,8 @@ import SwiftUI
 
 struct MovieDetailView: View {
     @Environment(AppState.self) private var appState
-    @Environment(\.openURL) private var openURL
     @State private var viewModel = DetailViewModel()
+    @Namespace private var heroFocusScope
 
     let item: MediaItem
     @State private var showRequestResult = false
@@ -64,6 +64,7 @@ struct MovieDetailView: View {
         ) {
             heroActionButtons
         }
+        .focusSection()
     }
 
     private var heroMetadata: [String] {
@@ -94,7 +95,10 @@ struct MovieDetailView: View {
                         Text("Trailer")
                     }
                 }
+                .prefersDefaultFocus(in: heroFocusScope)
             }
+
+            Spacer().frame(width: 20)
 
             let status = viewModel.movieDetails?.mediaInfo?.availabilityStatus ?? item.availability
             if status == .none || status == .unknown {
@@ -112,10 +116,11 @@ struct MovieDetailView: View {
                 }
             }
         }
+        .focusScope(heroFocusScope)
     }
 
     private var trailerKey: String? {
-        viewModel.movieDetails?.relatedVideos?.results?
+        viewModel.movieDetails?.relatedVideos?
             .first(where: { $0.site == "YouTube" && $0.type == "Trailer" })?
             .key
     }
@@ -256,8 +261,15 @@ struct MovieDetailView: View {
     }
 
     private func openTrailer(key: String) {
-        guard let url = URL(string: "https://www.youtube.com/watch?v=\(key)") else { return }
-        openURL(url)
+        guard let url = URL(string: "youtube://watch/\(key)") else { return }
+        UIApplication.shared.open(url) { success in
+            if !success {
+                Task { @MainActor in
+                    requestResultMessage = "Install the YouTube app to watch trailers."
+                    showRequestResult = true
+                }
+            }
+        }
     }
 }
 

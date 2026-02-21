@@ -13,7 +13,7 @@ struct OverseerrMovieDetails: Sendable {
     let genres: [OverseerrGenre]?
     let mediaInfo: OverseerrMediaInfo?
     let credits: OverseerrCredits?
-    let relatedVideos: OverseerrRelatedVideos?
+    let relatedVideos: [OverseerrVideo]?
 }
 
 extension OverseerrMovieDetails: Codable {
@@ -37,17 +37,18 @@ extension OverseerrMovieDetails: Codable {
         genres = try container.decodeIfPresent([OverseerrGenre].self, forKey: .genres)
         mediaInfo = try container.decodeIfPresent(OverseerrMediaInfo.self, forKey: .mediaInfo)
         credits = try container.decodeIfPresent(OverseerrCredits.self, forKey: .credits)
-        // Decode relatedVideos with try? so a format mismatch doesn't fail the entire response
-        relatedVideos = try? container.decodeIfPresent(OverseerrRelatedVideos.self, forKey: .relatedVideos)
+        // Decode relatedVideos with do/catch so a format mismatch doesn't fail the entire response
+        do {
+            relatedVideos = try container.decodeIfPresent([OverseerrVideo].self, forKey: .relatedVideos)
+        } catch {
+            relatedVideos = nil
+        }
     }
 }
 
-struct OverseerrRelatedVideos: Codable, Sendable {
-    let results: [OverseerrVideo]?
-}
-
 struct OverseerrVideo: Codable, Sendable, Identifiable {
-    let id: Int
+    var id: String { key ?? UUID().uuidString }
+    let url: String?
     let key: String?
     let name: String?
     let site: String?

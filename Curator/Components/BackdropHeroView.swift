@@ -41,53 +41,50 @@ struct BackdropHeroView<Actions: View>: View {
             )
 
             // Overlay content
-            HStack(alignment: .bottom) {
-                // Left: poster + title
-                HStack(alignment: .bottom, spacing: 30) {
-                    // Poster thumbnail
-                    if let url = ImageService.posterURL(posterPath, size: .w342) {
-                        AsyncImage(url: url) { phase in
-                            if let image = phase.image {
-                                image.resizable().aspectRatio(2/3, contentMode: .fit)
-                            } else {
-                                RoundedRectangle(cornerRadius: 12).fill(.quaternary)
-                            }
-                        }
-                        .frame(width: 200, height: 300)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .shadow(color: .black.opacity(0.5), radius: 20, y: 10)
-                    }
-
-                    // Title and metadata
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(title)
-                            .font(.title)
-                            .fontWeight(.bold)
-
-                        if !metadata.isEmpty {
-                            HStack(spacing: 16) {
-                                ForEach(metadata, id: \.self) { item in
-                                    Text(item)
-                                }
-                            }
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                        }
-
-                        if let genres, !genres.isEmpty {
-                            Text(genres)
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
+            HStack(alignment: .bottom, spacing: 30) {
+                // Poster thumbnail
+                if let url = ImageService.posterURL(posterPath, size: .w342) {
+                    AsyncImage(url: url) { phase in
+                        if let image = phase.image {
+                            image.resizable().aspectRatio(2/3, contentMode: .fit)
+                        } else {
+                            RoundedRectangle(cornerRadius: 12).fill(.quaternary)
                         }
                     }
-                    .padding(.bottom, 20)
+                    .frame(width: 200, height: 300)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .shadow(color: .black.opacity(0.5), radius: 20, y: 10)
                 }
 
-                Spacer()
+                // Title, metadata, and action buttons
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(title)
+                        .font(.title)
+                        .fontWeight(.bold)
 
-                // Right: action buttons
-                actions
-                    .padding(.bottom, 20)
+                    if !metadata.isEmpty {
+                        HStack(spacing: 16) {
+                            ForEach(metadata, id: \.self) { item in
+                                Text(item)
+                            }
+                        }
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    }
+
+                    if let genres, !genres.isEmpty {
+                        Text(genres)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    // Action buttons directly below metadata
+                    actions
+                        .padding(.top, 4)
+                }
+                .padding(.bottom, 20)
+
+                Spacer()
             }
             .padding(.horizontal, 60)
             .padding(.bottom, 20)
