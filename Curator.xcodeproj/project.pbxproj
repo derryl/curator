@@ -349,6 +349,12 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					C85223C35CFCEAAA60E22090 = {
+						DevelopmentTeam = M7B243E5V8;
+						ProvisioningStyle = Automatic;
+					};
+				};
 			};
 			buildConfigurationList = 7E5F8E9ADB8970C96C90C500 /* Build configuration list for PBXProject "Curator" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -512,6 +518,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = M7B243E5V8;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Curator/Info.plist;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -589,6 +597,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = M7B243E5V8;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Curator/Info.plist;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
