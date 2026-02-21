@@ -328,50 +328,51 @@ Device Code OAuth 2.0 — ideal for TV (no keyboard-heavy entry):
 
 ## Implementation Phases (sequencing only, no time estimates)
 
-### Phase 1: Project Setup & Foundation
-1. Create Xcode tvOS project (SwiftUI lifecycle, tvOS 17 deployment target)
-2. Set up folder structure per the tree above
-3. Implement `Constants.swift`, `KeychainHelper.swift`, `UserDefaultsKeys.swift`
-4. Define all Codable model structs
+### Phase 1: Project Setup & Foundation -- COMPLETE
+1. ~~Create Xcode tvOS project (SwiftUI lifecycle, tvOS 17 deployment target)~~ -- Used xcodegen
+2. ~~Set up folder structure per the tree above~~
+3. ~~Implement `Constants.swift`, `KeychainHelper.swift`, `UserDefaultsKeys.swift`~~
+4. ~~Define all Codable model structs~~
 
-### Phase 2: Overseerr Integration
-5. Implement `OverseerrClient` (URLSession, all endpoints listed above)
-6. Implement `AppState` with Overseerr connection management
-7. Build `SettingsView` + `OverseerrSetupView` (config, test, save)
-8. Build `OnboardingView` (Overseerr-only flow)
-9. Build `SearchView` + `SearchViewModel`
-10. Build `MediaCard` + `AvailabilityBadge` components
-11. Build `MovieDetailView` + `TVDetailView` + `DetailViewModel` (details + request button)
+### Phase 2: Overseerr Integration -- COMPLETE
+5. ~~Implement `OverseerrClient` (URLSession, all endpoints listed above)~~
+6. ~~Implement `AppState` with Overseerr connection management~~
+7. ~~Build `SettingsView` + `OverseerrSetupView` (config, test, save)~~
+8. ~~Build `OnboardingView` (Overseerr-only flow)~~
+9. ~~Build `SearchView` + `SearchViewModel`~~
+10. ~~Build `MediaCard` + `AvailabilityBadge` components~~
+11. ~~Build `MovieDetailView` + `TVDetailView` + `DetailViewModel` (details + request button)~~
 
-**Milestone:** Functioning Overseerr client comparable to existing seerr-tv app.
+**Milestone:** Functioning Overseerr client comparable to existing seerr-tv app. ACHIEVED
 
-### Phase 3: Discovery UI (Overseerr Fallback)
-12. Build `MediaShelfView` + `ShelfHeaderView`
-13. Build `HomeView` + `HomeViewModel` with Overseerr discover endpoints
-14. Build `GenreListView` + `GenreResultsView` using Overseerr genre endpoints
-15. Build root `ContentView` TabView navigation
-16. Build "See All" paginated grid views
+### Phase 3: Discovery UI (Overseerr Fallback) -- COMPLETE
+12. ~~Build `MediaShelfView` + `ShelfHeaderView`~~
+13. ~~Build `HomeView` + `HomeViewModel` with Overseerr discover endpoints~~
+14. ~~Build `GenreListView` + `GenreResultsView` + `GenreBrowseViewModel` using Overseerr genre endpoints~~
+15. ~~Build root `ContentView` TabView navigation~~
+16. "See All" paginated grid views -- DEFERRED to Phase 5 (shelves currently show full results inline)
 
-**Milestone:** Full browsing app with Overseerr-powered discovery.
+**Milestone:** Full browsing app with Overseerr-powered discovery. ACHIEVED
 
-### Phase 4: Trakt Integration
-17. Register Trakt API application at trakt.tv
-18. Implement `TraktClient` (all endpoints listed above)
-19. Implement `TraktAuthManager` with device code flow
-20. Build `TraktSetupView` + `DeviceCodeView`
-21. Implement `MediaResolver` (Trakt tmdb_id -> Overseerr detail+availability)
-22. Update `HomeViewModel` to prefer Trakt data when connected
-23. Build "Because you watched X" recommendation shelves
+### Phase 4: Trakt Integration -- COMPLETE
+17. ~~Register Trakt API application at trakt.tv~~ -- Credentials in .env.local
+18. ~~Implement `TraktClient` (all endpoints listed above)~~
+19. ~~Implement `TraktAuthManager` with device code flow~~
+20. ~~Build `TraktSetupView` + `DeviceCodeView`~~
+21. ~~Implement `MediaResolver` (Trakt tmdb_id -> Overseerr detail+availability)~~
+22. ~~Update `HomeViewModel` to prefer Trakt data when connected~~
+23. ~~Build "Because you watched X" recommendation shelves~~
 
-**Milestone:** Personalized discovery powered by Trakt watch history.
+**Milestone:** Personalized discovery powered by Trakt watch history. ACHIEVED
 
 ### Phase 5: Polish
 24. `PersonDetailView`
-25. Error handling views with retry
-26. Loading states throughout
+25. ~~Error handling views with retry~~ -- `ErrorView` component built in Phase 2
+26. ~~Loading states throughout~~ -- `LoadingView` component built in Phase 2
 27. Focus navigation refinement
 28. App icon and launch screen
 29. TestFlight build and distribution
+30. "See All" paginated grid views (deferred from Phase 3)
 
 ---
 

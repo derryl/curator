@@ -18,3 +18,5 @@ Packages/
 # IDE
 .idea/
 *.code-workspace
+
+.env.local
