@@ -126,17 +126,7 @@ struct MovieDetailView: View {
     }
 
     private var filteredProfiles: [QualityOption] {
-        var fourK: QualityOption?
-        var tenEighty: QualityOption?
-        for profile in viewModel.qualityProfiles {
-            let name = profile.name.lowercased()
-            if fourK == nil && (name.contains("4k") || name.contains("2160") || name.contains("uhd")) {
-                fourK = QualityOption(id: "4k", profileId: profile.id, label: "4K")
-            } else if tenEighty == nil && name.contains("1080") {
-                tenEighty = QualityOption(id: "1080", profileId: profile.id, label: "1080p")
-            }
-        }
-        return [tenEighty, fourK].compactMap { $0 }
+        QualityOption.filtered(from: viewModel.qualityProfiles)
     }
 
     // MARK: - Content Sections
@@ -275,8 +265,22 @@ struct MovieDetailView: View {
 
 // MARK: - Quality Option
 
-private struct QualityOption: Identifiable {
+struct QualityOption: Identifiable {
     let id: String
     let profileId: Int
     let label: String
+
+    static func filtered(from profiles: [OverseerrQualityProfile]) -> [QualityOption] {
+        var fourK: QualityOption?
+        var tenEighty: QualityOption?
+        for profile in profiles {
+            let name = profile.name.lowercased()
+            if fourK == nil && (name.contains("4k") || name.contains("2160") || name.contains("uhd")) {
+                fourK = QualityOption(id: "4k", profileId: profile.id, label: "4K")
+            } else if tenEighty == nil && name.contains("1080") {
+                tenEighty = QualityOption(id: "1080", profileId: profile.id, label: "1080p")
+            }
+        }
+        return [tenEighty, fourK].compactMap { $0 }
+    }
 }

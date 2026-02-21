@@ -3,9 +3,11 @@ import SwiftUI
 struct TVDetailView: View {
     @Environment(AppState.self) private var appState
     @State private var viewModel = DetailViewModel()
+    @Namespace private var heroFocusScope
 
     let item: MediaItem
-    @State private var showRequestConfirmation = false
+    @State private var showRequestResult = false
+    @State private var requestResultMessage = ""
 
     var body: some View {
         Group {
@@ -34,17 +36,24 @@ struct TVDetailView: View {
 
                 VStack(alignment: .leading, spacing: 40) {
                     availabilityStatus
-                    actionSection
                     overviewSection
                     seasonsSection
                     castSection
-                    similarSection
-                    recommendedSection
+                    youMightLikeSection
                 }
                 .padding(.horizontal, 60)
             }
         }
+        .ignoresSafeArea(edges: [.top, .horizontal])
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .alert("Request", isPresented: $showRequestResult) {
+            Button("OK") {}
+        } message: {
+            Text(requestResultMessage)
+        }
     }
+
+    // MARK: - Hero
 
     private var heroSection: some View {
         BackdropHeroView(
@@ -53,7 +62,10 @@ struct TVDetailView: View {
             posterPath: item.posterPath,
             metadata: heroMetadata,
             genres: viewModel.tvDetails?.genres.map { $0.map(\.name).joined(separator: ", ") }
-        )
+        ) {
+            heroActionButtons
+        }
+        .focusSection()
     }
 
     private var heroMetadata: [String] {
@@ -70,62 +82,60 @@ struct TVDetailView: View {
         return items
     }
 
+    // MARK: - Hero Action Buttons
+
+    @ViewBuilder
+    private var heroActionButtons: some View {
+        HStack(spacing: 16) {
+            if let key = trailerKey {
+                Button {
+                    openTrailer(key: key)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "play.fill")
+                        Text("Trailer")
+                    }
+                }
+                .prefersDefaultFocus(in: heroFocusScope)
+            }
+
+            Spacer().frame(width: 20)
+
+            let status = viewModel.tvDetails?.mediaInfo?.availabilityStatus ?? item.availability
+            if status == .none || status == .unknown {
+                if !filteredProfiles.isEmpty {
+                    Text("Request")
+                        .foregroundStyle(.secondary)
+                }
+                ForEach(filteredProfiles) { profile in
+                    Button {
+                        submitRequest(profileId: profile.profileId)
+                    } label: {
+                        Text(profile.label)
+                    }
+                    .disabled(viewModel.isRequesting)
+                }
+            }
+        }
+        .focusScope(heroFocusScope)
+    }
+
+    private var trailerKey: String? {
+        viewModel.tvDetails?.relatedVideos?
+            .first(where: { $0.site == "YouTube" && $0.type == "Trailer" })?
+            .key
+    }
+
+    private var filteredProfiles: [QualityOption] {
+        QualityOption.filtered(from: viewModel.qualityProfiles)
+    }
+
+    // MARK: - Content Sections
+
     @ViewBuilder
     private var availabilityStatus: some View {
         let status = viewModel.tvDetails?.mediaInfo?.availabilityStatus ?? item.availability
         StatusPill(status: status)
-    }
-
-    @ViewBuilder
-    private var actionSection: some View {
-        let status = viewModel.tvDetails?.mediaInfo?.availabilityStatus ?? item.availability
-        if status == .none || status == .unknown {
-            if viewModel.qualityProfiles.isEmpty {
-                Button {
-                    showRequestConfirmation = true
-                } label: {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                        Text("Request")
-                    }
-                }
-                .disabled(viewModel.isRequesting)
-                .alert("Request TV Show", isPresented: $showRequestConfirmation) {
-                    Button("Request") {
-                        submitRequest(profileId: nil)
-                    }
-                    Button("Cancel", role: .cancel) {}
-                } message: {
-                    Text("Request \"\(item.title)\"?")
-                }
-            } else {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Request \"\(item.title)\"")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 16) {
-                        ForEach(viewModel.qualityProfiles) { profile in
-                            Button {
-                                submitRequest(profileId: profile.id)
-                            } label: {
-                                Text(profile.name)
-                            }
-                            .disabled(viewModel.isRequesting)
-                        }
-                    }
-                }
-            }
-        }
-
-        if case .success = viewModel.requestResult {
-            Text("Request submitted!")
-                .foregroundStyle(.green)
-                .font(.callout)
-        } else if case .failure(let msg) = viewModel.requestResult {
-            Text(msg)
-                .foregroundStyle(.red)
-                .font(.callout)
-        }
     }
 
     @ViewBuilder
@@ -235,16 +245,16 @@ struct TVDetailView: View {
     }
 
     @ViewBuilder
-    private var similarSection: some View {
-        if !viewModel.similarItems.isEmpty {
+    private var youMightLikeSection: some View {
+        if !viewModel.youMightLikeItems.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Similar")
+                Text("You Might Like")
                     .font(.headline)
                 ScrollView(.horizontal) {
                     LazyHStack(spacing: 30) {
-                        ForEach(viewModel.similarItems) { similar in
-                            NavigationLink(value: similar) {
-                                MediaCard(item: similar)
+                        ForEach(viewModel.youMightLikeItems) { item in
+                            NavigationLink(value: item) {
+                                MediaCard(item: item)
                             }
                             .buttonStyle(.focusableCard)
                         }
@@ -256,27 +266,7 @@ struct TVDetailView: View {
         }
     }
 
-    @ViewBuilder
-    private var recommendedSection: some View {
-        if !viewModel.recommendedItems.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Recommended")
-                    .font(.headline)
-                ScrollView(.horizontal) {
-                    LazyHStack(spacing: 30) {
-                        ForEach(viewModel.recommendedItems) { recommended in
-                            NavigationLink(value: recommended) {
-                                MediaCard(item: recommended)
-                            }
-                            .buttonStyle(.focusableCard)
-                        }
-                    }
-                    .padding(.horizontal, 4)
-                }
-                .focusSection()
-            }
-        }
-    }
+    // MARK: - Actions
 
     private func loadDetails() {
         guard let client = appState.overseerrClient else { return }
@@ -285,7 +275,7 @@ struct TVDetailView: View {
         }
     }
 
-    private func submitRequest(profileId: Int?) {
+    private func submitRequest(profileId: Int) {
         Task {
             guard let client = appState.overseerrClient else { return }
             await viewModel.requestMedia(
@@ -294,6 +284,25 @@ struct TVDetailView: View {
                 profileId: profileId,
                 using: client
             )
+            if case .success = viewModel.requestResult {
+                requestResultMessage = "Request submitted!"
+                showRequestResult = true
+            } else if case .failure(let msg) = viewModel.requestResult {
+                requestResultMessage = msg
+                showRequestResult = true
+            }
+        }
+    }
+
+    private func openTrailer(key: String) {
+        guard let url = URL(string: "youtube://watch/\(key)") else { return }
+        UIApplication.shared.open(url) { success in
+            if !success {
+                Task { @MainActor in
+                    requestResultMessage = "Install the YouTube app to watch trailers."
+                    showRequestResult = true
+                }
+            }
         }
     }
 }

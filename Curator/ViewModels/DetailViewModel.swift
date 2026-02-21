@@ -68,8 +68,16 @@ final class DetailViewModel {
             let (details, similar, recs) = try await (detailsTask, similarTask, recsTask)
 
             tvDetails = details
-            similarItems = similar.results.compactMap { MediaItem.from(result: $0) }
-            recommendedItems = recs.results.compactMap { MediaItem.from(result: $0) }
+
+            let similarMediaItems = similar.results.compactMap { MediaItem.from(result: $0) }
+            let recommendedMediaItems = recs.results.compactMap { MediaItem.from(result: $0) }
+
+            let tvGenreIds = Set(details.genres?.map(\.id) ?? [])
+            youMightLikeItems = mergeAndFilter(
+                similar: similarMediaItems,
+                recommended: recommendedMediaItems,
+                genreIds: tvGenreIds
+            )
 
             // Fetch quality profiles from Sonarr
             await loadQualityProfiles(for: "tv", using: client)
