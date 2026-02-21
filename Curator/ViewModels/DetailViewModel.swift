@@ -6,6 +6,7 @@ import Observation
 final class DetailViewModel {
     var movieDetails: OverseerrMovieDetails?
     var tvDetails: OverseerrTvDetails?
+    var youMightLikeItems: [MediaItem] = []
     var similarItems: [MediaItem] = []
     var recommendedItems: [MediaItem] = []
     var isLoading = false
@@ -35,8 +36,16 @@ final class DetailViewModel {
             let (details, similar, recs) = try await (detailsTask, similarTask, recsTask)
 
             movieDetails = details
-            similarItems = similar.results.compactMap { MediaItem.from(result: $0) }
-            recommendedItems = recs.results.compactMap { MediaItem.from(result: $0) }
+
+            let similarMediaItems = similar.results.compactMap { MediaItem.from(result: $0) }
+            let recommendedMediaItems = recs.results.compactMap { MediaItem.from(result: $0) }
+
+            let movieGenreIds = Set(details.genres?.map(\.id) ?? [])
+            youMightLikeItems = mergeAndFilter(
+                similar: similarMediaItems,
+                recommended: recommendedMediaItems,
+                genreIds: movieGenreIds
+            )
 
             // Fetch quality profiles from Radarr
             await loadQualityProfiles(for: "movie", using: client)
@@ -105,6 +114,43 @@ final class DetailViewModel {
         }
 
         isRequesting = false
+    }
+
+    // MARK: - Private
+
+    /// Merge similar + recommended, deduplicate, and filter out items that share no genres with the current title.
+    /// Recommended items are prioritized (appear first). Items without genre data are kept.
+    private func mergeAndFilter(
+        similar: [MediaItem],
+        recommended: [MediaItem],
+        genreIds: Set<Int>
+    ) -> [MediaItem] {
+        var seen = Set<String>()
+        var merged: [MediaItem] = []
+
+        // Recommended first (higher quality matches)
+        for item in recommended {
+            guard !seen.contains(item.id) else { continue }
+            seen.insert(item.id)
+            merged.append(item)
+        }
+
+        // Then similar
+        for item in similar {
+            guard !seen.contains(item.id) else { continue }
+            seen.insert(item.id)
+            merged.append(item)
+        }
+
+        // If we don't know the current title's genres, return everything
+        guard !genreIds.isEmpty else { return merged }
+
+        return merged.filter { item in
+            // Keep items with no genre data (benefit of the doubt)
+            guard !item.genreIds.isEmpty else { return true }
+            // Keep items that share at least one genre
+            return !genreIds.isDisjoint(with: item.genreIds)
+        }
     }
 
     private func loadQualityProfiles(for mediaType: String, using client: OverseerrClient) async {

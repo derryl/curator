@@ -35,6 +35,9 @@ struct SearchView: View {
                     TVDetailView(item: item)
                 }
             }
+            .navigationDestination(for: PersonDestination.self) { person in
+                PersonDetailView(person: person)
+            }
         }
     }
 

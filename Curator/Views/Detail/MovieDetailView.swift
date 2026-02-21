@@ -2,10 +2,12 @@ import SwiftUI
 
 struct MovieDetailView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.openURL) private var openURL
     @State private var viewModel = DetailViewModel()
 
     let item: MediaItem
-    @State private var showRequestConfirmation = false
+    @State private var showRequestResult = false
+    @State private var requestResultMessage = ""
 
     var body: some View {
         Group {
@@ -34,16 +36,23 @@ struct MovieDetailView: View {
 
                 VStack(alignment: .leading, spacing: 40) {
                     availabilityStatus
-                    actionSection
                     overviewSection
                     castSection
-                    similarSection
-                    recommendedSection
+                    youMightLikeSection
                 }
                 .padding(.horizontal, 60)
             }
         }
+        .ignoresSafeArea(edges: .top)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .alert("Request", isPresented: $showRequestResult) {
+            Button("OK") {}
+        } message: {
+            Text(requestResultMessage)
+        }
     }
+
+    // MARK: - Hero
 
     private var heroSection: some View {
         BackdropHeroView(
@@ -52,7 +61,9 @@ struct MovieDetailView: View {
             posterPath: item.posterPath,
             metadata: heroMetadata,
             genres: viewModel.movieDetails?.genres.map { $0.map(\.name).joined(separator: ", ") }
-        )
+        ) {
+            heroActionButtons
+        }
     }
 
     private var heroMetadata: [String] {
@@ -69,64 +80,61 @@ struct MovieDetailView: View {
         return items
     }
 
+    // MARK: - Hero Action Buttons
+
+    @ViewBuilder
+    private var heroActionButtons: some View {
+        HStack(spacing: 16) {
+            if let key = trailerKey {
+                Button {
+                    openTrailer(key: key)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "play.fill")
+                        Text("Trailer")
+                    }
+                }
+            }
+
+            let status = viewModel.movieDetails?.mediaInfo?.availabilityStatus ?? item.availability
+            if status == .none || status == .unknown {
+                ForEach(filteredProfiles) { profile in
+                    Button {
+                        submitRequest(profileId: profile.profileId)
+                    } label: {
+                        Text(profile.label)
+                    }
+                    .disabled(viewModel.isRequesting)
+                }
+            }
+        }
+    }
+
+    private var trailerKey: String? {
+        viewModel.movieDetails?.relatedVideos?.results?
+            .first(where: { $0.site == "YouTube" && $0.type == "Trailer" })?
+            .key
+    }
+
+    private var filteredProfiles: [QualityOption] {
+        var options: [QualityOption] = []
+        for profile in viewModel.qualityProfiles {
+            let name = profile.name.lowercased()
+            if name.contains("4k") || name.contains("2160") || name.contains("uhd") {
+                options.append(QualityOption(id: "4k", profileId: profile.id, label: "4K"))
+            } else if name.contains("1080") || name.contains("hd") && !name.contains("4k") {
+                options.append(QualityOption(id: "1080", profileId: profile.id, label: "1080p"))
+            }
+        }
+        return options
+    }
+
+    // MARK: - Content Sections
+
     @ViewBuilder
     private var availabilityStatus: some View {
         let status = viewModel.movieDetails?.mediaInfo?.availabilityStatus ?? item.availability
         StatusPill(status: status)
-    }
-
-    @ViewBuilder
-    private var actionSection: some View {
-        let status = viewModel.movieDetails?.mediaInfo?.availabilityStatus ?? item.availability
-        if status == .none || status == .unknown {
-            if viewModel.qualityProfiles.isEmpty {
-                // No profiles loaded — simple request button
-                Button {
-                    showRequestConfirmation = true
-                } label: {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                        Text("Request")
-                    }
-                }
-                .disabled(viewModel.isRequesting)
-                .alert("Request Movie", isPresented: $showRequestConfirmation) {
-                    Button("Request") {
-                        submitRequest(profileId: nil)
-                    }
-                    Button("Cancel", role: .cancel) {}
-                } message: {
-                    Text("Request \"\(item.title)\"?")
-                }
-            } else {
-                // Quality profile selection
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Request \"\(item.title)\"")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 16) {
-                        ForEach(viewModel.qualityProfiles) { profile in
-                            Button {
-                                submitRequest(profileId: profile.id)
-                            } label: {
-                                Text(profile.name)
-                            }
-                            .disabled(viewModel.isRequesting)
-                        }
-                    }
-                }
-            }
-        }
-
-        if case .success = viewModel.requestResult {
-            Text("Request submitted!")
-                .foregroundStyle(.green)
-                .font(.callout)
-        } else if case .failure(let msg) = viewModel.requestResult {
-            Text(msg)
-                .foregroundStyle(.red)
-                .font(.callout)
-        }
     }
 
     @ViewBuilder
@@ -152,54 +160,35 @@ struct MovieDetailView: View {
                 ScrollView(.horizontal) {
                     LazyHStack(spacing: 20) {
                         ForEach(cast.prefix(20)) { member in
-                            VStack(spacing: 6) {
-                                if let url = ImageService.posterURL(member.profilePath, size: .w185) {
-                                    AsyncImage(url: url) { phase in
-                                        if let image = phase.image {
-                                            image.resizable().aspectRatio(contentMode: .fill)
-                                        } else {
-                                            Circle().fill(.quaternary)
+                            NavigationLink(value: PersonDestination(id: member.id, name: member.name ?? "")) {
+                                VStack(spacing: 6) {
+                                    if let url = ImageService.posterURL(member.profilePath, size: .w185) {
+                                        AsyncImage(url: url) { phase in
+                                            if let image = phase.image {
+                                                image.resizable().aspectRatio(contentMode: .fill)
+                                            } else {
+                                                Circle().fill(.quaternary)
+                                            }
                                         }
+                                        .frame(width: 140, height: 140)
+                                        .clipShape(Circle())
+                                    } else {
+                                        Circle().fill(.quaternary)
+                                            .frame(width: 140, height: 140)
+                                            .overlay {
+                                                Image(systemName: "person.fill")
+                                                    .foregroundStyle(.tertiary)
+                                            }
                                     }
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(Circle())
-                                } else {
-                                    Circle().fill(.quaternary)
-                                        .frame(width: 100, height: 100)
-                                        .overlay {
-                                            Image(systemName: "person.fill")
-                                                .foregroundStyle(.tertiary)
-                                        }
+                                    Text(member.name ?? "")
+                                        .font(.caption)
+                                        .lineLimit(1)
+                                    Text(member.character ?? "")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
                                 }
-                                Text(member.name ?? "")
-                                    .font(.caption)
-                                    .lineLimit(1)
-                                Text(member.character ?? "")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            }
-                            .frame(width: 120)
-                        }
-                    }
-                    .padding(.horizontal, 4)
-                }
-                .focusSection()
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var similarSection: some View {
-        if !viewModel.similarItems.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Similar")
-                    .font(.headline)
-                ScrollView(.horizontal) {
-                    LazyHStack(spacing: 30) {
-                        ForEach(viewModel.similarItems) { similar in
-                            NavigationLink(value: similar) {
-                                MediaCard(item: similar)
+                                .frame(width: 160)
                             }
                             .buttonStyle(.focusableCard)
                         }
@@ -212,16 +201,16 @@ struct MovieDetailView: View {
     }
 
     @ViewBuilder
-    private var recommendedSection: some View {
-        if !viewModel.recommendedItems.isEmpty {
+    private var youMightLikeSection: some View {
+        if !viewModel.youMightLikeItems.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Recommended")
+                Text("You Might Like")
                     .font(.headline)
                 ScrollView(.horizontal) {
                     LazyHStack(spacing: 30) {
-                        ForEach(viewModel.recommendedItems) { recommended in
-                            NavigationLink(value: recommended) {
-                                MediaCard(item: recommended)
+                        ForEach(viewModel.youMightLikeItems) { item in
+                            NavigationLink(value: item) {
+                                MediaCard(item: item)
                             }
                             .buttonStyle(.focusableCard)
                         }
@@ -232,6 +221,8 @@ struct MovieDetailView: View {
             }
         }
     }
+
+    // MARK: - Actions
 
     private func loadDetails() {
         guard let client = appState.overseerrClient else { return }
@@ -240,7 +231,7 @@ struct MovieDetailView: View {
         }
     }
 
-    private func submitRequest(profileId: Int?) {
+    private func submitRequest(profileId: Int) {
         Task {
             guard let client = appState.overseerrClient else { return }
             await viewModel.requestMedia(
@@ -249,6 +240,26 @@ struct MovieDetailView: View {
                 profileId: profileId,
                 using: client
             )
+            if case .success = viewModel.requestResult {
+                requestResultMessage = "Request submitted!"
+                showRequestResult = true
+            } else if case .failure(let msg) = viewModel.requestResult {
+                requestResultMessage = msg
+                showRequestResult = true
+            }
         }
     }
+
+    private func openTrailer(key: String) {
+        guard let url = URL(string: "https://www.youtube.com/watch?v=\(key)") else { return }
+        openURL(url)
+    }
+}
+
+// MARK: - Quality Option
+
+private struct QualityOption: Identifiable {
+    let id: String
+    let profileId: Int
+    let label: String
 }

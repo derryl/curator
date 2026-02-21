@@ -39,6 +39,9 @@ struct GenreListView: View {
                     TVDetailView(item: item)
                 }
             }
+            .navigationDestination(for: PersonDestination.self) { person in
+                PersonDetailView(person: person)
+            }
             .task {
                 if viewModel.movieGenres.isEmpty {
                     loadGenres()

@@ -194,34 +194,37 @@ struct TVDetailView: View {
                 ScrollView(.horizontal) {
                     LazyHStack(spacing: 20) {
                         ForEach(cast.prefix(20)) { member in
-                            VStack(spacing: 6) {
-                                if let url = ImageService.posterURL(member.profilePath, size: .w185) {
-                                    AsyncImage(url: url) { phase in
-                                        if let image = phase.image {
-                                            image.resizable().aspectRatio(contentMode: .fill)
-                                        } else {
-                                            Circle().fill(.quaternary)
+                            NavigationLink(value: PersonDestination(id: member.id, name: member.name ?? "")) {
+                                VStack(spacing: 6) {
+                                    if let url = ImageService.posterURL(member.profilePath, size: .w185) {
+                                        AsyncImage(url: url) { phase in
+                                            if let image = phase.image {
+                                                image.resizable().aspectRatio(contentMode: .fill)
+                                            } else {
+                                                Circle().fill(.quaternary)
+                                            }
                                         }
+                                        .frame(width: 140, height: 140)
+                                        .clipShape(Circle())
+                                    } else {
+                                        Circle().fill(.quaternary)
+                                            .frame(width: 140, height: 140)
+                                            .overlay {
+                                                Image(systemName: "person.fill")
+                                                    .foregroundStyle(.tertiary)
+                                            }
                                     }
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(Circle())
-                                } else {
-                                    Circle().fill(.quaternary)
-                                        .frame(width: 100, height: 100)
-                                        .overlay {
-                                            Image(systemName: "person.fill")
-                                                .foregroundStyle(.tertiary)
-                                        }
+                                    Text(member.name ?? "")
+                                        .font(.caption)
+                                        .lineLimit(1)
+                                    Text(member.character ?? "")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
                                 }
-                                Text(member.name ?? "")
-                                    .font(.caption)
-                                    .lineLimit(1)
-                                Text(member.character ?? "")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
+                                .frame(width: 160)
                             }
-                            .frame(width: 120)
+                            .buttonStyle(.focusableCard)
                         }
                     }
                     .padding(.horizontal, 4)

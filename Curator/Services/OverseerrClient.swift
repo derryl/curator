@@ -108,6 +108,16 @@ actor OverseerrClient {
         try await get("/tv/\(tmdbId)/recommendations", query: ["page": String(page)])
     }
 
+    // MARK: - Person
+
+    func personDetails(personId: Int) async throws -> OverseerrPersonDetails {
+        try await get("/person/\(personId)")
+    }
+
+    func personCombinedCredits(personId: Int) async throws -> OverseerrPersonCombinedCredits {
+        try await get("/person/\(personId)/combined_credits")
+    }
+
     // MARK: - Service Configuration (Quality Profiles)
 
     func radarrServices() async throws -> [OverseerrServiceInfo] {
@@ -172,7 +182,7 @@ actor OverseerrClient {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
         let (data, response) = try await session.data(for: request)
-        try validateResponse(response)
+        try validateResponse(response, data: data)
         return try decoder.decode(T.self, from: data)
     }
 
@@ -185,16 +195,22 @@ actor OverseerrClient {
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await session.data(for: request)
-        try validateResponse(response)
+        try validateResponse(response, data: data)
         return try decoder.decode(T.self, from: data)
     }
 
-    private func validateResponse(_ response: URLResponse) throws {
+    private func validateResponse(_ response: URLResponse, data: Data? = nil) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw OverseerrError.invalidResponse
         }
         guard (200...299).contains(httpResponse.statusCode) else {
-            throw OverseerrError.httpError(statusCode: httpResponse.statusCode)
+            var serverMessage: String?
+            if let data,
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let message = json["message"] as? String {
+                serverMessage = message
+            }
+            throw OverseerrError.httpError(statusCode: httpResponse.statusCode, message: serverMessage)
         }
     }
 }
@@ -203,15 +219,19 @@ actor OverseerrClient {
 
 enum OverseerrError: LocalizedError {
     case invalidResponse
-    case httpError(statusCode: Int)
+    case httpError(statusCode: Int, message: String?)
     case notConfigured
 
     var errorDescription: String? {
         switch self {
         case .invalidResponse:
             "Invalid response from server"
-        case .httpError(let statusCode):
-            "Server returned error \(statusCode)"
+        case .httpError(let statusCode, let message):
+            if let message {
+                "Error \(statusCode): \(message)"
+            } else {
+                "Server returned error \(statusCode)"
+            }
         case .notConfigured:
             "Overseerr is not configured"
         }

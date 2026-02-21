@@ -10,6 +10,7 @@ struct MediaItem: Identifiable, Hashable, Sendable {
     let posterPath: String?
     let backdropPath: String?
     let voteAverage: Double?
+    let genreIds: [Int]
     var availability: AvailabilityStatus
 
     enum MediaType: String, Codable, Sendable {
@@ -42,6 +43,7 @@ extension MediaItem {
             posterPath: result.posterPath,
             backdropPath: result.backdropPath,
             voteAverage: result.voteAverage,
+            genreIds: result.genreIds ?? [],
             availability: result.mediaInfo?.availabilityStatus ?? .none
         )
     }
@@ -62,6 +64,7 @@ extension MediaItem {
             posterPath: movieDetails.posterPath,
             backdropPath: movieDetails.backdropPath,
             voteAverage: movieDetails.voteAverage,
+            genreIds: movieDetails.genres?.map(\.id) ?? [],
             availability: movieDetails.mediaInfo?.availabilityStatus ?? .none
         )
     }
@@ -82,6 +85,7 @@ extension MediaItem {
             posterPath: tvDetails.posterPath,
             backdropPath: tvDetails.backdropPath,
             voteAverage: tvDetails.voteAverage,
+            genreIds: tvDetails.genres?.map(\.id) ?? [],
             availability: tvDetails.mediaInfo?.availabilityStatus ?? .none
         )
     }
@@ -98,6 +102,7 @@ extension MediaItem {
             posterPath: nil,
             backdropPath: nil,
             voteAverage: nil,
+            genreIds: [],
             availability: .none
         )
     }
@@ -114,6 +119,7 @@ extension MediaItem {
             posterPath: nil,
             backdropPath: nil,
             voteAverage: nil,
+            genreIds: [],
             availability: .none
         )
     }

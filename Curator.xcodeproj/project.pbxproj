@@ -61,6 +61,9 @@
 		F907690B756DF7D2259BA955 /* ImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C360BECA6639F6F6867915C /* ImageService.swift */; };
 		AA1122334455667788990011 /* FocusableCardButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1122334455667788990011 /* FocusableCardButtonStyle.swift */; };
 		AA2233445566778899001122 /* BackdropHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB2233445566778899001122 /* BackdropHeroView.swift */; };
+		DD2233445566778899001122 /* OverseerrPersonDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD1122334455667788990011 /* OverseerrPersonDetails.swift */; };
+		DD4455667788990011223344 /* PersonViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3344556677889900112233 /* PersonViewModel.swift */; };
+		DD6677889900112233445566 /* PersonDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD5566778899001122334455 /* PersonDetailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -120,6 +123,9 @@
 		F145E309544B81DB0FE57AE8 /* TraktMovie.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraktMovie.swift; sourceTree = "<group>"; };
 		F9F20736520E743AE391E47F /* MediaItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaItem.swift; sourceTree = "<group>"; };
 		F9FD4DEBB3E364D9F17FC1C1 /* MovieDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieDetailView.swift; sourceTree = "<group>"; };
+		DD1122334455667788990011 /* OverseerrPersonDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverseerrPersonDetails.swift; sourceTree = "<group>"; };
+		DD3344556677889900112233 /* PersonViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonViewModel.swift; sourceTree = "<group>"; };
+		DD5566778899001122334455 /* PersonDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonDetailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -172,6 +178,7 @@
 				EF82CC29380294C372974DD1 /* DetailViewModel.swift */,
 				5B0AFFFBD2AEDFE6F06561F5 /* GenreBrowseViewModel.swift */,
 				D4AD789E3DDFE1192505A472 /* HomeViewModel.swift */,
+				DD3344556677889900112233 /* PersonViewModel.swift */,
 				9FAC059697D6B8EB1DF0F875 /* SearchViewModel.swift */,
 				B3736D42E4590E51BB994674 /* SettingsViewModel.swift */,
 			);
@@ -186,6 +193,7 @@
 				E920ABB81BB89E853D65AC58 /* OverseerrMediaRequest.swift */,
 				2DA099DE9B468DBF628D4178 /* OverseerrMediaResult.swift */,
 				E630E04A8E6EC28AC5DB54AD /* OverseerrMovieDetails.swift */,
+				DD1122334455667788990011 /* OverseerrPersonDetails.swift */,
 				BD365B37B430FDEE31D5F632 /* OverseerrServiceConfig.swift */,
 				D0ED55F7640EDCAE6CD533A7 /* OverseerrTvDetails.swift */,
 				3AF3BCD63589C905570BE0B3 /* OverseerrUser.swift */,
@@ -283,6 +291,7 @@
 			isa = PBXGroup;
 			children = (
 				F9FD4DEBB3E364D9F17FC1C1 /* MovieDetailView.swift */,
+				DD5566778899001122334455 /* PersonDetailView.swift */,
 				7EAEB154DBB4372B2A40FC31 /* TVDetailView.swift */,
 			);
 			path = Detail;
@@ -423,6 +432,8 @@
 				1B0A011AFAD0C2E529828E55 /* MediaResolver.swift in Sources */,
 				7AB892E086886E3D6B087D2F /* MediaShelfView.swift in Sources */,
 				8D6C24F43F4E2FD2A650824B /* MovieDetailView.swift in Sources */,
+				DD6677889900112233445566 /* PersonDetailView.swift in Sources */,
+				DD4455667788990011223344 /* PersonViewModel.swift in Sources */,
 				DE1AF2FDD4BF90EC143BBB69 /* OnboardingView.swift in Sources */,
 				C2F40DDC1F6A80C85FFF2F91 /* OverseerrClient.swift in Sources */,
 				07D3291EC86503D3D81367F5 /* OverseerrGenreSliderItem.swift in Sources */,
@@ -430,6 +441,7 @@
 				7BEFB261A7EF9DB089A0492E /* OverseerrMediaRequest.swift in Sources */,
 				7E31F6737C9788D2DB361B88 /* OverseerrMediaResult.swift in Sources */,
 				30B9716F49287462E7BC4930 /* OverseerrMovieDetails.swift in Sources */,
+				DD2233445566778899001122 /* OverseerrPersonDetails.swift in Sources */,
 				18B2F26D7651DD5686B14F51 /* OverseerrServiceConfig.swift in Sources */,
 				67328D9C50B5C48C81B607C3 /* OverseerrSetupView.swift in Sources */,
 				2CA2042573DD283F9DC30276 /* OverseerrTvDetails.swift in Sources */,

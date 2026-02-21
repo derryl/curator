@@ -11,6 +11,7 @@ struct OverseerrMediaResult: Codable, Identifiable, Sendable {
     let backdropPath: String?
     let overview: String?
     let voteAverage: Double?
+    let genreIds: [Int]?
     let mediaInfo: OverseerrMediaInfo?
 
     var displayTitle: String {
