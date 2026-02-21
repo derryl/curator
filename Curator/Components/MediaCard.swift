@@ -4,50 +4,23 @@ struct MediaCard: View {
     let item: MediaItem
 
     var body: some View {
-        Button {
-            // Navigation handled by navigationDestination
-        } label: {
-            VStack(alignment: .leading, spacing: 10) {
-                posterImage
-                    .overlay(alignment: .topTrailing) {
-                        AvailabilityBadge(status: item.availability)
-                            .padding(8)
-                    }
-                    .overlay(alignment: .bottomLeading) {
-                        ratingBadge
-                    }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(item.title)
-                        .font(.body)
-                        .fontWeight(.semibold)
-                        .lineLimit(2, reservesSpace: true)
-                        .multilineTextAlignment(.leading)
-
-                    HStack(spacing: 6) {
-                        if let year = item.year {
-                            Text(String(year))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        if item.mediaType == .tv {
-                            Text("TV")
-                                .font(.caption2)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 1)
-                                .background(.secondary.opacity(0.15))
-                                .clipShape(RoundedRectangle(cornerRadius: 3))
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 4)
+        posterImage
+            .overlay(alignment: .topTrailing) {
+                AvailabilityBadge(status: item.availability)
+                    .padding(8)
+            }
+            .overlay(alignment: .bottomTrailing) {
+                ratingBadge
+            }
+            .overlay(alignment: .bottom) {
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.4)],
+                    startPoint: .center,
+                    endPoint: .bottom
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .frame(width: 240)
-        }
-        .buttonStyle(.card)
     }
 
     @ViewBuilder

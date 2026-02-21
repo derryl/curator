@@ -17,16 +17,10 @@ struct TVDetailView: View {
                 }
             } else {
                 contentView
+                    .transition(.opacity)
             }
         }
-        .navigationDestination(for: MediaItem.self) { navItem in
-            switch navItem.mediaType {
-            case .movie:
-                MovieDetailView(item: navItem)
-            case .tv:
-                TVDetailView(item: navItem)
-            }
-        }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.isLoading)
         .task {
             loadDetails()
         }
@@ -37,63 +31,43 @@ struct TVDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 40) {
                 heroSection
-                actionSection
-                overviewSection
-                seasonsSection
-                castSection
-                similarSection
-                recommendedSection
+
+                VStack(alignment: .leading, spacing: 40) {
+                    availabilityStatus
+                    actionSection
+                    overviewSection
+                    seasonsSection
+                    castSection
+                    similarSection
+                    recommendedSection
+                }
+                .padding(.horizontal, 60)
             }
-            .padding(60)
         }
     }
 
     private var heroSection: some View {
-        HStack(alignment: .top, spacing: 40) {
-            if let url = ImageService.posterURL(item.posterPath) {
-                AsyncImage(url: url) { phase in
-                    if let image = phase.image {
-                        image.resizable().aspectRatio(2/3, contentMode: .fit)
-                    } else {
-                        RoundedRectangle(cornerRadius: 12).fill(.quaternary)
-                    }
-                }
-                .frame(width: 300, height: 450)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
+        BackdropHeroView(
+            title: item.title,
+            backdropPath: item.backdropPath,
+            posterPath: item.posterPath,
+            metadata: heroMetadata,
+            genres: viewModel.tvDetails?.genres.map { $0.map(\.name).joined(separator: ", ") }
+        )
+    }
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text(item.title)
-                    .font(.title)
-                    .fontWeight(.bold)
-
-                HStack(spacing: 16) {
-                    if let year = item.year {
-                        Text(String(year))
-                    }
-                    if let seasons = viewModel.tvDetails?.numberOfSeasons {
-                        Text("\(seasons) Season\(seasons == 1 ? "" : "s")")
-                    }
-                    if let rating = item.voteAverage, rating > 0 {
-                        HStack(spacing: 4) {
-                            Image(systemName: "star.fill")
-                                .foregroundStyle(.yellow)
-                            Text(String(format: "%.1f", rating))
-                        }
-                    }
-                }
-                .font(.callout)
-                .foregroundStyle(.secondary)
-
-                if let genres = viewModel.tvDetails?.genres, !genres.isEmpty {
-                    Text(genres.map(\.name).joined(separator: ", "))
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-
-                availabilityStatus
-            }
+    private var heroMetadata: [String] {
+        var items: [String] = []
+        if let year = item.year {
+            items.append(String(year))
         }
+        if let seasons = viewModel.tvDetails?.numberOfSeasons {
+            items.append("\(seasons) Season\(seasons == 1 ? "" : "s")")
+        }
+        if let rating = item.voteAverage, rating > 0 {
+            items.append("★ \(String(format: "%.1f", rating))")
+        }
+        return items
     }
 
     @ViewBuilder
@@ -163,6 +137,7 @@ struct TVDetailView: View {
                 Text(overview)
                     .font(.body)
                     .foregroundStyle(.secondary)
+                    .focusable()
             }
         }
     }
@@ -205,6 +180,7 @@ struct TVDetailView: View {
                     }
                     .padding(.horizontal, 4)
                 }
+                .focusSection()
             }
         }
     }
@@ -250,6 +226,7 @@ struct TVDetailView: View {
                     }
                     .padding(.horizontal, 4)
                 }
+                .focusSection()
             }
         }
     }
@@ -266,7 +243,7 @@ struct TVDetailView: View {
                             NavigationLink(value: similar) {
                                 MediaCard(item: similar)
                             }
-                            .buttonStyle(.card)
+                            .buttonStyle(.focusableCard)
                         }
                     }
                     .padding(.horizontal, 4)
@@ -288,7 +265,7 @@ struct TVDetailView: View {
                             NavigationLink(value: recommended) {
                                 MediaCard(item: recommended)
                             }
-                            .buttonStyle(.card)
+                            .buttonStyle(.focusableCard)
                         }
                     }
                     .padding(.horizontal, 4)

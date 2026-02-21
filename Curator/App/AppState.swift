@@ -34,12 +34,37 @@ final class AppState {
                 self.isOverseerrConfigured = false
             }
         } else {
+            #if DEBUG
+            // Auto-configure with hardcoded test credentials in debug builds
+            let debugURL = URL(string: "http://REDACTED_IP:30002")!
+            let debugAPIKey = "REDACTED_OVERSEERR_API_KEY"
+            self.overseerrClient = OverseerrClient(baseURL: debugURL, apiKey: debugAPIKey)
+            self.isOverseerrConfigured = true
+            self.hasCompletedOnboarding = true
+            // Persist so subsequent launches skip onboarding
+            UserDefaults.standard.set("http", for: .overseerrConnectionType)
+            UserDefaults.standard.set("REDACTED_IP", for: .overseerrAddress)
+            UserDefaults.standard.set(30002, for: .overseerrPort)
+            try? KeychainHelper.save(debugAPIKey, for: .overseerrAPIKey)
+            UserDefaults.standard.set(true, for: .hasCompletedOnboarding)
+            #else
             self.isOverseerrConfigured = false
+            #endif
         }
 
         // Restore Trakt if previously connected
         let traktAuth = TraktAuthManager()
         self.traktAuthManager = traktAuth
+
+        #if DEBUG
+        // Seed Trakt tokens if not already in Keychain
+        if !traktAuth.isAuthenticated {
+            try? KeychainHelper.save("REDACTED_TRAKT_ACCESS_TOKEN", for: .traktAccessToken)
+            try? KeychainHelper.save("REDACTED_TRAKT_REFRESH_TOKEN", for: .traktRefreshToken)
+            self.isTraktConnected = true
+            UserDefaults.standard.set(true, for: .traktIsConnected)
+        }
+        #endif
 
         if isTraktConnected {
             self.traktClient = TraktClient(authManager: traktAuth)

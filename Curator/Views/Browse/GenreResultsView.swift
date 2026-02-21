@@ -39,7 +39,7 @@ struct GenreResultsView: View {
                     NavigationLink(value: item) {
                         MediaCard(item: item)
                     }
-                    .buttonStyle(.card)
+                    .buttonStyle(.focusableCard)
                     .onAppear {
                         if item.id == viewModel.genreResults.last?.id && viewModel.hasMorePages {
                             loadResults(page: viewModel.currentPage + 1)

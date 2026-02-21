@@ -17,16 +17,10 @@ struct MovieDetailView: View {
                 }
             } else {
                 contentView
+                    .transition(.opacity)
             }
         }
-        .navigationDestination(for: MediaItem.self) { navItem in
-            switch navItem.mediaType {
-            case .movie:
-                MovieDetailView(item: navItem)
-            case .tv:
-                TVDetailView(item: navItem)
-            }
-        }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.isLoading)
         .task {
             loadDetails()
         }
@@ -37,64 +31,42 @@ struct MovieDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 40) {
                 heroSection
-                actionSection
-                overviewSection
-                castSection
-                similarSection
-                recommendedSection
+
+                VStack(alignment: .leading, spacing: 40) {
+                    availabilityStatus
+                    actionSection
+                    overviewSection
+                    castSection
+                    similarSection
+                    recommendedSection
+                }
+                .padding(.horizontal, 60)
             }
-            .padding(60)
         }
     }
 
     private var heroSection: some View {
-        HStack(alignment: .top, spacing: 40) {
-            // Poster
-            if let url = ImageService.posterURL(item.posterPath) {
-                AsyncImage(url: url) { phase in
-                    if let image = phase.image {
-                        image.resizable().aspectRatio(2/3, contentMode: .fit)
-                    } else {
-                        RoundedRectangle(cornerRadius: 12).fill(.quaternary)
-                    }
-                }
-                .frame(width: 300, height: 450)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
+        BackdropHeroView(
+            title: item.title,
+            backdropPath: item.backdropPath,
+            posterPath: item.posterPath,
+            metadata: heroMetadata,
+            genres: viewModel.movieDetails?.genres.map { $0.map(\.name).joined(separator: ", ") }
+        )
+    }
 
-            // Metadata
-            VStack(alignment: .leading, spacing: 12) {
-                Text(item.title)
-                    .font(.title)
-                    .fontWeight(.bold)
-
-                HStack(spacing: 16) {
-                    if let year = item.year {
-                        Text(String(year))
-                    }
-                    if let runtime = viewModel.movieDetails?.runtime {
-                        Text("\(runtime) min")
-                    }
-                    if let rating = item.voteAverage, rating > 0 {
-                        HStack(spacing: 4) {
-                            Image(systemName: "star.fill")
-                                .foregroundStyle(.yellow)
-                            Text(String(format: "%.1f", rating))
-                        }
-                    }
-                }
-                .font(.callout)
-                .foregroundStyle(.secondary)
-
-                if let genres = viewModel.movieDetails?.genres, !genres.isEmpty {
-                    Text(genres.map(\.name).joined(separator: ", "))
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-
-                availabilityStatus
-            }
+    private var heroMetadata: [String] {
+        var items: [String] = []
+        if let year = item.year {
+            items.append(String(year))
         }
+        if let runtime = viewModel.movieDetails?.runtime {
+            items.append("\(runtime) min")
+        }
+        if let rating = item.voteAverage, rating > 0 {
+            items.append("★ \(String(format: "%.1f", rating))")
+        }
+        return items
     }
 
     @ViewBuilder
@@ -166,6 +138,7 @@ struct MovieDetailView: View {
                 Text(overview)
                     .font(.body)
                     .foregroundStyle(.secondary)
+                    .focusable()
             }
         }
     }
@@ -211,6 +184,7 @@ struct MovieDetailView: View {
                     }
                     .padding(.horizontal, 4)
                 }
+                .focusSection()
             }
         }
     }
@@ -227,7 +201,7 @@ struct MovieDetailView: View {
                             NavigationLink(value: similar) {
                                 MediaCard(item: similar)
                             }
-                            .buttonStyle(.card)
+                            .buttonStyle(.focusableCard)
                         }
                     }
                     .padding(.horizontal, 4)
@@ -249,7 +223,7 @@ struct MovieDetailView: View {
                             NavigationLink(value: recommended) {
                                 MediaCard(item: recommended)
                             }
-                            .buttonStyle(.card)
+                            .buttonStyle(.focusableCard)
                         }
                     }
                     .padding(.horizontal, 4)

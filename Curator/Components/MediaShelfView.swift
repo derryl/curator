@@ -16,7 +16,7 @@ struct MediaShelfView: View {
                         NavigationLink(value: item) {
                             MediaCard(item: item)
                         }
-                        .buttonStyle(.card)
+                        .buttonStyle(.focusableCard)
                     }
                 }
                 .padding(.horizontal, 60)

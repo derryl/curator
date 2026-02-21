@@ -54,4 +54,26 @@ actor MediaResolver {
             return results
         }
     }
+
+    /// Resolve movies and filter out watched (by TMDB ID) and fully available items.
+    /// Keeps `.partiallyAvailable` items (e.g., only some seasons downloaded).
+    func resolveAndFilterMovies(_ movies: [TraktMovie], watchedTmdbIds: Set<Int>) async -> [MediaItem] {
+        let filtered = movies.filter { movie in
+            guard let tmdbId = movie.ids.tmdb else { return false }
+            return !watchedTmdbIds.contains(tmdbId)
+        }
+        let resolved = await resolveMovies(filtered)
+        return resolved.filter { $0.availability != .available }
+    }
+
+    /// Resolve shows and filter out watched (by TMDB ID) and fully available items.
+    /// Keeps `.partiallyAvailable` items (e.g., only some seasons downloaded).
+    func resolveAndFilterShows(_ shows: [TraktShow], watchedTmdbIds: Set<Int>) async -> [MediaItem] {
+        let filtered = shows.filter { show in
+            guard let tmdbId = show.ids.tmdb else { return false }
+            return !watchedTmdbIds.contains(tmdbId)
+        }
+        let resolved = await resolveShows(filtered)
+        return resolved.filter { $0.availability != .available }
+    }
 }

@@ -38,6 +38,14 @@ enum Constants {
         }
     }
 
+    // MARK: - CouchMoney
+
+    enum CouchMoney {
+        static let username = "REDACTED_USERNAME"
+        static let movieListSlug = "couchmoney-movies"
+        static let showListSlug = "couchmoney-shows"
+    }
+
     // MARK: - Keychain
 
     enum Keychain {

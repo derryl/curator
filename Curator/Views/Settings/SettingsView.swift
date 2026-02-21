@@ -1,15 +1,19 @@
 import SwiftUI
 
+enum SettingsDestination: Hashable {
+    case overseerr
+    case trakt
+}
+
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
+    @Binding var path: NavigationPath
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 Section("Overseerr") {
-                    NavigationLink {
-                        OverseerrSetupView()
-                    } label: {
+                    NavigationLink(value: SettingsDestination.overseerr) {
                         HStack {
                             Label("Server", systemImage: "server.rack")
                             Spacer()
@@ -25,9 +29,7 @@ struct SettingsView: View {
                 }
 
                 Section("Trakt") {
-                    NavigationLink {
-                        TraktSetupView()
-                    } label: {
+                    NavigationLink(value: SettingsDestination.trakt) {
                         HStack {
                             Label("Account", systemImage: "person.circle")
                             Spacer()
@@ -43,6 +45,14 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .navigationDestination(for: SettingsDestination.self) { destination in
+                switch destination {
+                case .overseerr:
+                    OverseerrSetupView()
+                case .trakt:
+                    TraktSetupView()
+                }
+            }
         }
     }
 }

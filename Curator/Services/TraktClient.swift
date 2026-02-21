@@ -45,16 +45,26 @@ actor TraktClient {
 
     // MARK: - Recommendations (authenticated)
 
-    func recommendedMovies(limit: Int = 20) async throws -> [TraktMovie] {
-        try await get("/recommendations/movies", query: [
-            "limit": String(limit),
-        ], authenticated: true)
+    func recommendedMovies(limit: Int = 20, ignoreWatched: Bool = false, ignoreCollected: Bool = false) async throws -> [TraktMovie] {
+        var query = ["limit": String(limit)]
+        if ignoreWatched { query["ignore_watched"] = "true" }
+        if ignoreCollected { query["ignore_collected"] = "true" }
+        return try await get("/recommendations/movies", query: query, authenticated: true)
     }
 
-    func recommendedShows(limit: Int = 20) async throws -> [TraktShow] {
-        try await get("/recommendations/shows", query: [
+    func recommendedShows(limit: Int = 20, ignoreWatched: Bool = false, ignoreCollected: Bool = false) async throws -> [TraktShow] {
+        var query = ["limit": String(limit)]
+        if ignoreWatched { query["ignore_watched"] = "true" }
+        if ignoreCollected { query["ignore_collected"] = "true" }
+        return try await get("/recommendations/shows", query: query, authenticated: true)
+    }
+
+    // MARK: - User Lists (public, no auth needed)
+
+    func userListItems(username: String, listSlug: String, type: String, limit: Int = 20) async throws -> [TraktListItem] {
+        try await get("/users/\(username)/lists/\(listSlug)/items/\(type)", query: [
             "limit": String(limit),
-        ], authenticated: true)
+        ], authenticated: false)
     }
 
     // MARK: - Watch History (authenticated)

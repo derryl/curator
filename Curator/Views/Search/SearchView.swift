@@ -3,13 +3,14 @@ import SwiftUI
 struct SearchView: View {
     @Environment(AppState.self) private var appState
     @State private var viewModel = SearchViewModel()
+    @Binding var path: NavigationPath
 
     private let columns = [
         GridItem(.adaptive(minimum: 240, maximum: 280), spacing: 40),
     ]
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             VStack(spacing: 0) {
                 searchField
 
@@ -52,7 +53,7 @@ struct SearchView: View {
                     NavigationLink(value: item) {
                         MediaCard(item: item)
                     }
-                    .buttonStyle(.card)
+                    .buttonStyle(.focusableCard)
                     .onAppear {
                         if item.id == viewModel.results.last?.id {
                             viewModel.loadNextPage(using: appState.overseerrClient)

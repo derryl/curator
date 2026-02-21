@@ -8,8 +8,8 @@ struct ShelfHeaderView: View {
     var body: some View {
         HStack {
             Text(title)
-                .font(.title3)
-                .fontWeight(.bold)
+                .font(.callout)
+                .fontWeight(.semibold)
 
             Spacer()
 

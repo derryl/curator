@@ -3,14 +3,15 @@ import SwiftUI
 struct GenreListView: View {
     @Environment(AppState.self) private var appState
     @State private var viewModel = GenreBrowseViewModel()
-    @State private var selectedTab = 0
+    @State private var selectedMediaType = 0
+    @Binding var path: NavigationPath
 
     private let columns = [
         GridItem(.adaptive(minimum: 300, maximum: 400), spacing: 40),
     ]
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if viewModel.isLoading {
                     LoadingView(message: "Loading genres...")
@@ -22,7 +23,7 @@ struct GenreListView: View {
                     genreContent
                 }
             }
-            .navigationTitle("Browse")
+            .navigationTitle("")
             .navigationDestination(for: GenreDestination.self) { dest in
                 GenreResultsView(
                     genreId: dest.id,
@@ -48,7 +49,7 @@ struct GenreListView: View {
 
     private var genreContent: some View {
         VStack(spacing: 0) {
-            Picker("Media Type", selection: $selectedTab) {
+            Picker("Media Type", selection: $selectedMediaType) {
                 Text("Movies").tag(0)
                 Text("TV Shows").tag(1)
             }
@@ -58,16 +59,16 @@ struct GenreListView: View {
 
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 40) {
-                    let genres = selectedTab == 0 ? viewModel.movieGenres : viewModel.tvGenres
+                    let genres = selectedMediaType == 0 ? viewModel.movieGenres : viewModel.tvGenres
                     ForEach(genres) { genre in
                         NavigationLink(value: GenreDestination(
                             id: genre.id,
                             name: genre.name,
-                            mediaType: selectedTab == 0 ? .movie : .tv
+                            mediaType: selectedMediaType == 0 ? .movie : .tv
                         )) {
                             genreCard(genre, genres: genres)
                         }
-                        .buttonStyle(.card)
+                        .buttonStyle(.focusableCard)
                     }
                 }
                 .padding(60)

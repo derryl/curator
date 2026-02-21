@@ -30,6 +30,7 @@
 		589CF008EEA0E90255C7E26E /* MediaCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13BDE94C6ED6372DEC6D582F /* MediaCard.swift */; };
 		637FA3C0013D3BDD93380ABF /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4AD789E3DDFE1192505A472 /* HomeViewModel.swift */; };
 		640D643B333C518726FAB97A /* TraktHistoryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6340F69AD2346584376C0B73 /* TraktHistoryItem.swift */; };
+		CC1122334455667788AABB02 /* TraktListItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1122334455667788AABB01 /* TraktListItem.swift */; };
 		6709C44835B849173E412798 /* ErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE482F6256A9189A46E93FBA /* ErrorView.swift */; };
 		67328D9C50B5C48C81B607C3 /* OverseerrSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FA6D0824FDB86A087147512 /* OverseerrSetupView.swift */; };
 		6869E61B522A8B4E8FC7A682 /* MediaItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9F20736520E743AE391E47F /* MediaItem.swift */; };
@@ -58,11 +59,15 @@
 		E73F0D070975E21F5867A92F /* DetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF82CC29380294C372974DD1 /* DetailViewModel.swift */; };
 		EDD16F9AC3F9516749885FA4 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD3C42691C127BE63F2EB1B /* KeychainHelper.swift */; };
 		F907690B756DF7D2259BA955 /* ImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C360BECA6639F6F6867915C /* ImageService.swift */; };
+		AA1122334455667788990011 /* FocusableCardButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1122334455667788990011 /* FocusableCardButtonStyle.swift */; };
+		AA2233445566778899001122 /* BackdropHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB2233445566778899001122 /* BackdropHeroView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0F474E0233EAAE5C559D3E8F /* MediaShelfView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaShelfView.swift; sourceTree = "<group>"; };
 		13BDE94C6ED6372DEC6D582F /* MediaCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaCard.swift; sourceTree = "<group>"; };
+		BB1122334455667788990011 /* FocusableCardButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusableCardButtonStyle.swift; sourceTree = "<group>"; };
+		BB2233445566778899001122 /* BackdropHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackdropHeroView.swift; sourceTree = "<group>"; };
 		1803BDE1FC7DA3F507D0A7BA /* UserDefaultsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsKeys.swift; sourceTree = "<group>"; };
 		210914894564709C05F8BAAB /* TraktSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraktSetupView.swift; sourceTree = "<group>"; };
 		213211339EC04E9439B13E6D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -78,6 +83,7 @@
 		5B0AFFFBD2AEDFE6F06561F5 /* GenreBrowseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenreBrowseViewModel.swift; sourceTree = "<group>"; };
 		62B7AEC8D27A5C73BD1E7B6E /* TraktDeviceCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraktDeviceCode.swift; sourceTree = "<group>"; };
 		6340F69AD2346584376C0B73 /* TraktHistoryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraktHistoryItem.swift; sourceTree = "<group>"; };
+		CC1122334455667788AABB01 /* TraktListItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraktListItem.swift; sourceTree = "<group>"; };
 		6D443ECDDBF46DCFD9FEADED /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		6D8CED4281711A037952625D /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		6DE641632E0954F4475631CC /* TraktToken.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraktToken.swift; sourceTree = "<group>"; };
@@ -131,6 +137,7 @@
 				62B7AEC8D27A5C73BD1E7B6E /* TraktDeviceCode.swift */,
 				315C1D0D6855CEA8FE2D9129 /* TraktGenre.swift */,
 				6340F69AD2346584376C0B73 /* TraktHistoryItem.swift */,
+				CC1122334455667788AABB01 /* TraktListItem.swift */,
 				DF22BAD65EA4FC2FF672602E /* TraktIds.swift */,
 				F145E309544B81DB0FE57AE8 /* TraktMovie.swift */,
 				E02B595106B76CA594F5D737 /* TraktShow.swift */,
@@ -285,8 +292,10 @@
 			isa = PBXGroup;
 			children = (
 				7A1201653CA88863FD99E75A /* AvailabilityBadge.swift */,
+				BB2233445566778899001122 /* BackdropHeroView.swift */,
 				B7EBCD94BFC20F63F1DDEE73 /* DeviceCodeView.swift */,
 				AE482F6256A9189A46E93FBA /* ErrorView.swift */,
+				BB1122334455667788990011 /* FocusableCardButtonStyle.swift */,
 				8EE147F35BA46F82E0D0F750 /* LoadingView.swift */,
 				13BDE94C6ED6372DEC6D582F /* MediaCard.swift */,
 				0F474E0233EAAE5C559D3E8F /* MediaShelfView.swift */,
@@ -393,12 +402,14 @@
 			files = (
 				0F31B3786FAAC4382391EE53 /* AppState.swift in Sources */,
 				90816A6C9688906DB1A4546C /* AvailabilityBadge.swift in Sources */,
+				AA2233445566778899001122 /* BackdropHeroView.swift in Sources */,
 				7EDE132ABD5D176EF26643C8 /* Constants.swift in Sources */,
 				8B87F7C92002C2067EE493DD /* ContentView.swift in Sources */,
 				E02FBDD797A4764B3DF99ED0 /* CuratorApp.swift in Sources */,
 				E73F0D070975E21F5867A92F /* DetailViewModel.swift in Sources */,
 				A8AC6E03F968440EAB63CED8 /* DeviceCodeView.swift in Sources */,
 				6709C44835B849173E412798 /* ErrorView.swift in Sources */,
+				AA1122334455667788990011 /* FocusableCardButtonStyle.swift in Sources */,
 				0413E1FFF367268402BB32B3 /* GenreBrowseViewModel.swift in Sources */,
 				DF07A204502850F5AC0A8D1F /* GenreListView.swift in Sources */,
 				E10B8B626F2BD85FBCE14548 /* GenreResultsView.swift in Sources */,
@@ -435,6 +446,7 @@
 				859FA123068C913715D0D776 /* TraktDeviceCode.swift in Sources */,
 				834AE2D0BCA74D725D63B7C1 /* TraktGenre.swift in Sources */,
 				640D643B333C518726FAB97A /* TraktHistoryItem.swift in Sources */,
+				CC1122334455667788AABB02 /* TraktListItem.swift in Sources */,
 				564978EE0B09F27B16FC20B6 /* TraktIds.swift in Sources */,
 				16AD04D428C6612EB7C79431 /* TraktMovie.swift in Sources */,
 				D215EC4868C0766A2858EAF7 /* TraktSetupView.swift in Sources */,

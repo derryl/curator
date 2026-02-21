@@ -11,23 +11,58 @@ struct OnboardingView: View {
     @State private var traktError: String?
     @State private var pollTask: Task<Void, Never>?
 
+    private let totalSteps = 4
+
     var body: some View {
-        VStack(spacing: 40) {
-            switch currentStep {
-            case 0:
-                welcomeStep
-            case 1:
-                overseerrStep
-            case 2:
-                traktStep
-            default:
-                readyStep
+        ZStack {
+            // Subtle background gradient
+            LinearGradient(
+                colors: [
+                    .black,
+                    .black.opacity(0.95),
+                    Color.accentColor.opacity(0.05),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 40) {
+                Spacer()
+
+                switch currentStep {
+                case 0:
+                    welcomeStep
+                case 1:
+                    overseerrStep
+                case 2:
+                    traktStep
+                default:
+                    readyStep
+                }
+
+                Spacer()
+
+                // Step indicator dots
+                stepIndicator
+                    .padding(.bottom, 40)
             }
+            .padding(80)
         }
-        .padding(80)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onDisappear {
             pollTask?.cancel()
+        }
+    }
+
+    private var stepIndicator: some View {
+        HStack(spacing: 10) {
+            ForEach(0..<totalSteps, id: \.self) { step in
+                Circle()
+                    .fill(step == currentStep ? Color.accentColor : Color.secondary.opacity(0.3))
+                    .frame(width: step == currentStep ? 10 : 8, height: step == currentStep ? 10 : 8)
+                    .animation(.easeInOut(duration: 0.2), value: currentStep)
+            }
         }
     }
 

@@ -128,22 +128,213 @@ final class HomeViewModel {
         traktClient: TraktClient,
         mediaResolver: MediaResolver
     ) async {
+        // Build watched IDs first — all recommendation sources need this
+        let watchedIds = await Self.buildWatchedIds(traktClient: traktClient)
+
+        // Fan out all shelf fetches concurrently
         async let trendingMoviesTask = Self.fetchTraktTrendingMovies(traktClient: traktClient, mediaResolver: mediaResolver)
         async let trendingShowsTask = Self.fetchTraktTrendingShows(traktClient: traktClient, mediaResolver: mediaResolver)
         async let popularMoviesTask = Self.fetchTraktPopularMovies(traktClient: traktClient, mediaResolver: mediaResolver)
         async let popularShowsTask = Self.fetchTraktPopularShows(traktClient: traktClient, mediaResolver: mediaResolver)
-        async let recsTask = Self.fetchRecommendationShelves(traktClient: traktClient, mediaResolver: mediaResolver)
+        async let couchMoneyTask = Self.fetchCouchMoneyShelves(traktClient: traktClient, mediaResolver: mediaResolver, watchedTmdbIds: watchedIds)
+        async let traktMLTask = Self.fetchTraktMLShelves(traktClient: traktClient, mediaResolver: mediaResolver, watchedTmdbIds: watchedIds)
+        async let becauseTask = Self.fetchBecauseYouWatchedShelves(traktClient: traktClient, mediaResolver: mediaResolver, watchedTmdbIds: watchedIds)
 
-        let (tMovies, tShows, pMovies, pShows, recs) = await (
-            trendingMoviesTask, trendingShowsTask, popularMoviesTask, popularShowsTask, recsTask
+        let (tMovies, tShows, pMovies, pShows, couchMoney, traktML, because) = await (
+            trendingMoviesTask, trendingShowsTask, popularMoviesTask, popularShowsTask,
+            couchMoneyTask, traktMLTask, becauseTask
         )
 
         trendingMovies = tMovies
         trendingShows = tShows
         popularMovies = pMovies
         popularShows = pShows
-        recommendationShelves = recs
+        recommendationShelves = couchMoney + traktML + because
     }
+
+    // MARK: - Watched IDs
+
+    private nonisolated static func buildWatchedIds(traktClient: TraktClient) async -> Set<Int> {
+        async let movieHistory = (try? await traktClient.watchHistory(type: "movies", limit: 200)) ?? []
+        async let showHistory = (try? await traktClient.watchHistory(type: "shows", limit: 200)) ?? []
+
+        let (movies, shows) = await (movieHistory, showHistory)
+        var ids = Set<Int>()
+        for item in movies {
+            if let tmdbId = item.movie?.ids.tmdb { ids.insert(tmdbId) }
+        }
+        for item in shows {
+            if let tmdbId = item.show?.ids.tmdb { ids.insert(tmdbId) }
+        }
+        return ids
+    }
+
+    // MARK: - CouchMoney Shelves
+
+    private nonisolated static func fetchCouchMoneyShelves(
+        traktClient: TraktClient,
+        mediaResolver: MediaResolver,
+        watchedTmdbIds: Set<Int>
+    ) async -> [RecommendationShelf] {
+        async let movieItems = (try? await traktClient.userListItems(
+            username: Constants.CouchMoney.username,
+            listSlug: Constants.CouchMoney.movieListSlug,
+            type: "movies",
+            limit: 20
+        )) ?? []
+        async let showItems = (try? await traktClient.userListItems(
+            username: Constants.CouchMoney.username,
+            listSlug: Constants.CouchMoney.showListSlug,
+            type: "shows",
+            limit: 20
+        )) ?? []
+
+        let (movies, shows) = await (movieItems, showItems)
+
+        let traktMovies = movies.compactMap(\.movie)
+        let traktShows = shows.compactMap(\.show)
+
+        async let resolvedMovies = mediaResolver.resolveAndFilterMovies(traktMovies, watchedTmdbIds: watchedTmdbIds)
+        async let resolvedShows = mediaResolver.resolveAndFilterShows(traktShows, watchedTmdbIds: watchedTmdbIds)
+
+        let (movieResults, showResults) = await (resolvedMovies, resolvedShows)
+
+        var shelves: [RecommendationShelf] = []
+        if !movieResults.isEmpty {
+            shelves.append(RecommendationShelf(
+                id: "couchmoney-movies",
+                title: "Recommended Movies",
+                items: movieResults
+            ))
+        }
+        if !showResults.isEmpty {
+            shelves.append(RecommendationShelf(
+                id: "couchmoney-shows",
+                title: "Recommended Shows",
+                items: showResults
+            ))
+        }
+        return shelves
+    }
+
+    // MARK: - Trakt ML Shelves
+
+    private nonisolated static func fetchTraktMLShelves(
+        traktClient: TraktClient,
+        mediaResolver: MediaResolver,
+        watchedTmdbIds: Set<Int>
+    ) async -> [RecommendationShelf] {
+        async let recMovies = (try? await traktClient.recommendedMovies(
+            limit: 20, ignoreWatched: true, ignoreCollected: true
+        )) ?? []
+        async let recShows = (try? await traktClient.recommendedShows(
+            limit: 20, ignoreWatched: true, ignoreCollected: true
+        )) ?? []
+
+        let (movies, shows) = await (recMovies, recShows)
+
+        async let resolvedMovies = mediaResolver.resolveAndFilterMovies(movies, watchedTmdbIds: watchedTmdbIds)
+        async let resolvedShows = mediaResolver.resolveAndFilterShows(shows, watchedTmdbIds: watchedTmdbIds)
+
+        let (movieResults, showResults) = await (resolvedMovies, resolvedShows)
+
+        var shelves: [RecommendationShelf] = []
+        if !movieResults.isEmpty {
+            shelves.append(RecommendationShelf(
+                id: "trakt-ml-movies",
+                title: "For You: Movies",
+                items: movieResults
+            ))
+        }
+        if !showResults.isEmpty {
+            shelves.append(RecommendationShelf(
+                id: "trakt-ml-shows",
+                title: "For You: Shows",
+                items: showResults
+            ))
+        }
+        return shelves
+    }
+
+    // MARK: - "Because you watched" Shelves
+
+    private nonisolated static func fetchBecauseYouWatchedShelves(
+        traktClient: TraktClient,
+        mediaResolver: MediaResolver,
+        watchedTmdbIds: Set<Int>
+    ) async -> [RecommendationShelf] {
+        // Fetch deeper history for both movies and shows, then interleave
+        async let movieHistory = (try? await traktClient.watchHistory(type: "movies", limit: 15)) ?? []
+        async let showHistory = (try? await traktClient.watchHistory(type: "shows", limit: 15)) ?? []
+
+        let (movies, shows) = await (movieHistory, showHistory)
+
+        // Interleave movie and show seeds for variety
+        var seeds: [(title: String, tmdbId: Int, mediaType: MediaItem.MediaType, slug: String?)] = []
+        let maxSeeds = max(movies.count, shows.count)
+        for i in 0..<maxSeeds {
+            if i < movies.count, let movie = movies[i].movie, let tmdbId = movie.ids.tmdb {
+                seeds.append((movie.title, tmdbId, .movie, movie.ids.slug))
+            }
+            if i < shows.count, let show = shows[i].show, let tmdbId = show.ids.tmdb {
+                seeds.append((show.title, tmdbId, .tv, show.ids.slug))
+            }
+        }
+
+        // Deduplicate franchises by slug prefix (e.g., "harry-potter-*" → keep only first)
+        var seenPrefixes = Set<String>()
+        let dedupedSeeds = seeds.filter { seed in
+            let prefix = franchisePrefix(slug: seed.slug)
+            if let prefix {
+                return seenPrefixes.insert(prefix).inserted
+            }
+            return true // no slug = keep it
+        }
+
+        var shelves: [RecommendationShelf] = []
+        let maxShelves = 2
+
+        for seed in dedupedSeeds {
+            guard shelves.count < maxShelves else { break }
+
+            let items: [MediaItem]
+            switch seed.mediaType {
+            case .movie:
+                guard let recs = try? await mediaResolver.overseerrClient.movieRecommendations(tmdbId: seed.tmdbId) else { continue }
+                let all = recs.results.compactMap { MediaItem.from(result: $0) }
+                items = all.filter { !watchedTmdbIds.contains($0.tmdbId) && $0.availability != .available }
+            case .tv:
+                guard let recs = try? await mediaResolver.overseerrClient.tvRecommendations(tmdbId: seed.tmdbId) else { continue }
+                let all = recs.results.compactMap { MediaItem.from(result: $0) }
+                items = all.filter { !watchedTmdbIds.contains($0.tmdbId) && $0.availability != .available }
+            }
+
+            // Require at least 3 results for a meaningful shelf
+            if items.count >= 3 {
+                shelves.append(RecommendationShelf(
+                    id: "rec-\(seed.tmdbId)",
+                    title: "Because you watched \(seed.title)",
+                    items: items
+                ))
+            }
+        }
+
+        return shelves
+    }
+
+    /// Extract a franchise prefix from a Trakt slug.
+    /// e.g., "harry-potter-and-the-goblet-of-fire" → "harry-potter"
+    /// Returns nil if no clear franchise prefix is detected.
+    private nonisolated static func franchisePrefix(slug: String?) -> String? {
+        guard let slug else { return nil }
+        let parts = slug.split(separator: "-")
+        // Need at least 3 parts to have a meaningful prefix
+        guard parts.count >= 3 else { return nil }
+        // Use first two words as franchise prefix
+        return parts.prefix(2).joined(separator: "-")
+    }
+
+    // MARK: - Trending & Popular (unchanged — no filtering)
 
     private nonisolated static func fetchTraktTrendingMovies(traktClient: TraktClient, mediaResolver: MediaResolver) async -> [MediaItem] {
         guard let trending = try? await traktClient.trendingMovies(limit: 20) else { return [] }
@@ -163,32 +354,5 @@ final class HomeViewModel {
     private nonisolated static func fetchTraktPopularShows(traktClient: TraktClient, mediaResolver: MediaResolver) async -> [MediaItem] {
         guard let popular = try? await traktClient.popularShows(limit: 20) else { return [] }
         return await mediaResolver.resolveShows(popular)
-    }
-
-    private nonisolated static func fetchRecommendationShelves(
-        traktClient: TraktClient,
-        mediaResolver: MediaResolver
-    ) async -> [RecommendationShelf] {
-        guard let history = try? await traktClient.watchHistory(type: "movies", limit: 3) else { return [] }
-
-        var shelves: [RecommendationShelf] = []
-
-        for historyItem in history {
-            guard let movie = historyItem.movie,
-                  let tmdbId = movie.ids.tmdb else { continue }
-
-            if let recs = try? await mediaResolver.overseerrClient.movieRecommendations(tmdbId: tmdbId) {
-                let items = recs.results.compactMap { MediaItem.from(result: $0) }
-                if !items.isEmpty {
-                    shelves.append(RecommendationShelf(
-                        id: "rec-\(tmdbId)",
-                        title: "Because you watched \(movie.title)",
-                        items: items
-                    ))
-                }
-            }
-        }
-
-        return shelves
     }
 }

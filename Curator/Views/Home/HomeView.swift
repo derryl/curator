@@ -3,9 +3,10 @@ import SwiftUI
 struct HomeView: View {
     @Environment(AppState.self) private var appState
     @State private var viewModel = HomeViewModel()
+    @Binding var path: NavigationPath
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if viewModel.isLoading && !hasAnyContent {
                     LoadingView(message: "Loading content...")
@@ -17,7 +18,6 @@ struct HomeView: View {
                     contentScrollView
                 }
             }
-            .navigationTitle("Home")
             .navigationDestination(for: MediaItem.self) { item in
                 switch item.mediaType {
                 case .movie:
