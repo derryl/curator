@@ -98,6 +98,10 @@ struct MovieDetailView: View {
 
             let status = viewModel.movieDetails?.mediaInfo?.availabilityStatus ?? item.availability
             if status == .none || status == .unknown {
+                if !filteredProfiles.isEmpty {
+                    Text("Request")
+                        .foregroundStyle(.secondary)
+                }
                 ForEach(filteredProfiles) { profile in
                     Button {
                         submitRequest(profileId: profile.profileId)
