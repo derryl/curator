@@ -6,6 +6,11 @@ struct OnboardingView: View {
     @State private var settingsVM = SettingsViewModel()
     @State private var showConnectionError = false
 
+    // Trakt auth state
+    @State private var deviceCode: TraktDeviceCode?
+    @State private var traktError: String?
+    @State private var pollTask: Task<Void, Never>?
+
     var body: some View {
         VStack(spacing: 40) {
             switch currentStep {
@@ -13,12 +18,17 @@ struct OnboardingView: View {
                 welcomeStep
             case 1:
                 overseerrStep
+            case 2:
+                traktStep
             default:
                 readyStep
             }
         }
         .padding(80)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onDisappear {
+            pollTask?.cancel()
+        }
     }
 
     private var welcomeStep: some View {
@@ -97,6 +107,47 @@ struct OnboardingView: View {
         }
     }
 
+    private var traktStep: some View {
+        VStack(spacing: 24) {
+            if let deviceCode {
+                DeviceCodeView(
+                    userCode: deviceCode.userCode,
+                    verificationUrl: deviceCode.verificationUrl
+                )
+            } else {
+                Image(systemName: "person.circle")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.tint)
+
+                Text("Connect Trakt")
+                    .font(.title2)
+                    .fontWeight(.bold)
+
+                Text("Link your Trakt account for personalized recommendations based on your watch history.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 600)
+
+                HStack(spacing: 20) {
+                    Button("Connect Trakt") {
+                        startTraktAuth()
+                    }
+
+                    Button("Skip") {
+                        withAnimation { currentStep = 3 }
+                    }
+                }
+
+                if let traktError {
+                    Text(traktError)
+                        .foregroundStyle(.red)
+                        .font(.caption)
+                }
+            }
+        }
+    }
+
     private var readyStep: some View {
         VStack(spacing: 24) {
             Image(systemName: "checkmark.circle.fill")
@@ -107,7 +158,9 @@ struct OnboardingView: View {
                 .font(.title)
                 .fontWeight(.bold)
 
-            Text("Overseerr is connected. Start exploring your media library.")
+            Text(appState.isTraktConnected
+                 ? "Overseerr and Trakt are connected. Personalized recommendations are ready."
+                 : "Overseerr is connected. You can add Trakt later in Settings.")
                 .font(.title3)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -117,6 +170,57 @@ struct OnboardingView: View {
                 appState.completeOnboarding()
             }
             .padding(.top, 20)
+        }
+    }
+
+    private func startTraktAuth() {
+        guard let authManager = appState.traktAuthManager else { return }
+        traktError = nil
+
+        Task {
+            do {
+                let code = try await authManager.requestDeviceCode()
+                deviceCode = code
+                startPolling(deviceCode: code.deviceCode, interval: code.interval)
+            } catch {
+                traktError = error.localizedDescription
+            }
+        }
+    }
+
+    private func startPolling(deviceCode: String, interval: Int) {
+        guard let authManager = appState.traktAuthManager else { return }
+
+        pollTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(interval))
+                guard !Task.isCancelled else { return }
+
+                do {
+                    _ = try await authManager.pollForToken(deviceCode: deviceCode)
+                    appState.connectTrakt()
+                    self.deviceCode = nil
+                    withAnimation { currentStep = 3 }
+                    return
+                } catch TraktAuthError.pendingAuthorization {
+                    continue
+                } catch TraktAuthError.slowDown {
+                    try? await Task.sleep(for: .seconds(interval))
+                    continue
+                } catch TraktAuthError.expired {
+                    self.deviceCode = nil
+                    traktError = "Code expired. Please try again."
+                    return
+                } catch TraktAuthError.denied {
+                    self.deviceCode = nil
+                    traktError = "Authorization denied."
+                    return
+                } catch {
+                    self.deviceCode = nil
+                    traktError = error.localizedDescription
+                    return
+                }
+            }
         }
     }
 }
