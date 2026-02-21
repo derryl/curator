@@ -24,5 +24,6 @@ struct MediaShelfView: View {
             }
             .focusSection()
         }
+        .accessibilityIdentifier("media_shelf")
     }
 }

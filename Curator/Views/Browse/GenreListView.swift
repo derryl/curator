@@ -74,6 +74,7 @@ struct GenreListView: View {
                         .buttonStyle(.focusableCard)
                     }
                 }
+                .accessibilityIdentifier("genre_grid")
                 .padding(60)
             }
         }

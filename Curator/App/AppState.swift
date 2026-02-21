@@ -19,22 +19,33 @@ final class AppState {
         self.hasCompletedOnboarding = UserDefaults.standard.bool(for: .hasCompletedOnboarding)
         self.isTraktConnected = UserDefaults.standard.bool(for: .traktIsConnected)
 
+        self.isOverseerrConfigured = false
+
         // Restore Overseerr configuration if previously saved
         if let address = UserDefaults.standard.string(for: .overseerrAddress),
            !address.isEmpty,
            let apiKey = KeychainHelper.readString(key: .overseerrAPIKey) {
-            let connectionType = UserDefaults.standard.string(for: .overseerrConnectionType) ?? "http"
-            let port = UserDefaults.standard.integer(for: .overseerrPort)
-            let effectivePort = port > 0 ? port : Constants.Overseerr.defaultPort
-            let urlString = "\(connectionType)://\(address):\(effectivePort)"
-            if let url = URL(string: urlString) {
-                self.overseerrClient = OverseerrClient(baseURL: url, apiKey: apiKey)
-                self.isOverseerrConfigured = true
-            } else {
-                self.isOverseerrConfigured = false
-            }
-        } else {
             #if DEBUG
+            // If a stale Tailscale IP is persisted, skip restoration and fall through to debug defaults
+            let staleTailscaleIP = "REDACTED_IP"
+            let shouldRestore = address != staleTailscaleIP
+            #else
+            let shouldRestore = true
+            #endif
+            if shouldRestore {
+                let connectionType = UserDefaults.standard.string(for: .overseerrConnectionType) ?? "http"
+                let port = UserDefaults.standard.integer(for: .overseerrPort)
+                let effectivePort = port > 0 ? port : Constants.Overseerr.defaultPort
+                let urlString = "\(connectionType)://\(address):\(effectivePort)"
+                if let url = URL(string: urlString) {
+                    self.overseerrClient = OverseerrClient(baseURL: url, apiKey: apiKey)
+                    self.isOverseerrConfigured = true
+                }
+            }
+        }
+
+        #if DEBUG
+        if !isOverseerrConfigured {
             // Auto-configure with hardcoded test credentials in debug builds
             let debugURL = URL(string: "http://REDACTED_IP:30002")!
             let debugAPIKey = "REDACTED_OVERSEERR_API_KEY"
@@ -47,10 +58,8 @@ final class AppState {
             UserDefaults.standard.set(30002, for: .overseerrPort)
             try? KeychainHelper.save(debugAPIKey, for: .overseerrAPIKey)
             UserDefaults.standard.set(true, for: .hasCompletedOnboarding)
-            #else
-            self.isOverseerrConfigured = false
-            #endif
         }
+        #endif
 
         // Restore Trakt if previously connected
         let traktAuth = TraktAuthManager()
