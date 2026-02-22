@@ -8,7 +8,7 @@ struct TVDetailView: View {
     let item: MediaItem
     @State private var showRequestResult = false
     @State private var requestResultMessage = ""
-    @State private var trailerToPlay: TrailerVideo?
+    @State private var trailerPlayer = TrailerPlayer()
 
     var body: some View {
         Group {
@@ -52,8 +52,13 @@ struct TVDetailView: View {
         } message: {
             Text(requestResultMessage)
         }
-        .fullScreenCover(item: $trailerToPlay) { trailer in
-            TrailerSheet(videoKey: trailer.id)
+        .overlay {
+            if trailerPlayer.isLoading {
+                ZStack {
+                    Color.black.opacity(0.6).ignoresSafeArea()
+                    ProgressView()
+                }
+            }
         }
     }
 
@@ -302,6 +307,6 @@ struct TVDetailView: View {
     }
 
     private func openTrailer(key: String) {
-        trailerToPlay = TrailerVideo(id: key)
+        trailerPlayer.play(videoKey: key)
     }
 }

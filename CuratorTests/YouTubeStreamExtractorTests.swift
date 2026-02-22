@@ -75,6 +75,82 @@ final class YouTubeStreamExtractorTests: XCTestCase {
         XCTAssertTrue(result!.videoURL.absoluteString.contains("itag=22"))
     }
 
+    // MARK: - Adaptive Validation (403 Fallback)
+
+    func testFallsBackToProgressiveWhenAdaptiveURLReturns403() async {
+        let session = TestFixtures.mockSession()
+
+        MockURLProtocol.requestHandler = { request in
+            // HEAD request to validate adaptive URL — return 403 (blocked)
+            if request.httpMethod == "HEAD" {
+                let response = TestFixtures.httpResponse(url: request.url!, statusCode: 403)
+                return (response, Data())
+            }
+            // Innertube response with both adaptive and progressive
+            let response = TestFixtures.httpResponse(url: request.url!)
+            return (response, TestFixtures.youtubeInnertubeResponseJSON)
+        }
+
+        let result = await YouTubeStreamExtractor.streamResult(for: "test", session: session)
+
+        XCTAssertNotNil(result)
+        // Should fall back to progressive (itag=22, 720p) since adaptive failed validation
+        XCTAssertTrue(result!.videoURL.absoluteString.contains("itag=22"))
+        // Progressive has combined audio, so audioURL should be nil
+        XCTAssertNil(result!.audioURL)
+    }
+
+    // MARK: - Playability Status
+
+    func testRejectsLoginRequiredPlayabilityStatus() async {
+        let session = TestFixtures.mockSession()
+        var innertubeCallCount = 0
+
+        MockURLProtocol.requestHandler = { request in
+            let response = TestFixtures.httpResponse(url: request.url!)
+            if request.url?.path == "/youtubei/v1/player" {
+                innertubeCallCount += 1
+                // Both ANDROID and embedded get LOGIN_REQUIRED
+                return (response, TestFixtures.youtubeInnertubeLoginRequiredJSON)
+            }
+            // HTML fallback returns nothing
+            return (response, Data())
+        }
+
+        let url = await YouTubeStreamExtractor.streamURL(for: "restricted", session: session)
+
+        XCTAssertNil(url)
+        // Should have tried both innertube strategies (ANDROID + embedded)
+        XCTAssertEqual(innertubeCallCount, 2)
+    }
+
+    // MARK: - Embedded Player Fallback
+
+    func testFallsBackToEmbeddedPlayerWhenAndroidFails() async {
+        let session = TestFixtures.mockSession()
+        var innertubeCallCount = 0
+
+        MockURLProtocol.requestHandler = { request in
+            let response = TestFixtures.httpResponse(url: request.url!)
+            if request.url?.path == "/youtubei/v1/player" {
+                innertubeCallCount += 1
+                if innertubeCallCount == 1 {
+                    // ANDROID client fails with LOGIN_REQUIRED
+                    return (response, TestFixtures.youtubeInnertubeLoginRequiredJSON)
+                } else {
+                    // Embedded player succeeds
+                    return (response, TestFixtures.youtubeInnertubeProgressiveOnlyJSON)
+                }
+            }
+            return (response, Data())
+        }
+
+        let result = await YouTubeStreamExtractor.streamResult(for: "test", session: session)
+
+        XCTAssertNotNil(result)
+        XCTAssertEqual(innertubeCallCount, 2)
+    }
+
     // MARK: - Legacy streamURL Convenience
 
     func testStreamURLReturnsVideoURLFromAdaptiveFormats() async {
@@ -99,7 +175,7 @@ final class YouTubeStreamExtractorTests: XCTestCase {
         var capturedBodyData: Data?
 
         MockURLProtocol.requestHandler = { request in
-            if request.url?.path == "/youtubei/v1/player" {
+            if request.url?.path == "/youtubei/v1/player" && capturedBodyData == nil {
                 if let stream = request.httpBodyStream {
                     stream.open()
                     var data = Data()
@@ -135,7 +211,7 @@ final class YouTubeStreamExtractorTests: XCTestCase {
         var capturedUserAgent: String?
 
         MockURLProtocol.requestHandler = { request in
-            if request.url?.path == "/youtubei/v1/player" {
+            if request.url?.path == "/youtubei/v1/player" && capturedUserAgent == nil {
                 capturedUserAgent = request.value(forHTTPHeaderField: "User-Agent")
             }
             let response = TestFixtures.httpResponse(url: request.url!)
@@ -190,7 +266,7 @@ final class YouTubeStreamExtractorTests: XCTestCase {
 
         let result = await YouTubeStreamExtractor.streamResult(for: "abc123", session: session)
 
-        // Should have tried innertube first, then HTML scraping
+        // Should have tried both innertube strategies, then HTML scraping
         XCTAssertTrue(requestPaths.contains("/youtubei/v1/player"))
         XCTAssertTrue(requestPaths.contains("/watch"))
         XCTAssertNotNil(result)

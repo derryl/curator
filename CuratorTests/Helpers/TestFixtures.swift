@@ -336,6 +336,28 @@ enum TestFixtures {
         return try! JSONSerialization.data(withJSONObject: json)
     }()
 
+    /// Response with LOGIN_REQUIRED status but valid streamingData.
+    /// The extractor should reject this because playabilityStatus isn't OK.
+    static let youtubeInnertubeLoginRequiredJSON: Data = {
+        let json: [String: Any] = [
+            "playabilityStatus": [
+                "status": "LOGIN_REQUIRED",
+                "reason": "Sign in to confirm your age",
+            ] as [String: Any],
+            "streamingData": [
+                "formats": [
+                    [
+                        "itag": 18,
+                        "url": "https://rr1---sn-example.googlevideo.com/videoplayback?itag=18",
+                        "mimeType": "video/mp4",
+                        "height": 360,
+                    ] as [String: Any],
+                ],
+            ] as [String: Any],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json)
+    }()
+
     static let youtubeHTMLWithHLS: Data = {
         let html = """
         <html><body><script>var ytInitialPlayerResponse = {"streamingData":{"hlsManifestUrl":"https://manifest.googlevideo.com/api/manifest/hls_variant/expire/123/id/abc"}};</script></body></html>
