@@ -38,3 +38,30 @@ targets:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG"
         Release:
           SWIFT_COMPILATION_MODE: wholemodule
+
+  CuratorTests:
+    type: bundle.unit-test
+    platform: tvOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: CuratorTests
+    dependencies:
+      - target: Curator
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: "YES"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Curator.app/Curator"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+  CuratorUITests:
+    type: bundle.ui-testing
+    platform: tvOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: CuratorUITests
+    dependencies:
+      - target: Curator
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: "YES"
+        TEST_TARGET_NAME: Curator

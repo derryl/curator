@@ -61,6 +61,7 @@ struct BackdropHeroView<Actions: View>: View {
                     Text(title)
                         .font(.title)
                         .fontWeight(.bold)
+                        .accessibilityIdentifier("hero_title")
 
                     if !metadata.isEmpty {
                         HStack(spacing: 16) {

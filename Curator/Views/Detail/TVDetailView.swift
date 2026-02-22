@@ -100,6 +100,7 @@ struct TVDetailView: View {
                         Text("Trailer")
                     }
                 }
+                .accessibilityIdentifier("button_trailer")
                 .prefersDefaultFocus(in: heroFocusScope)
             }
 
@@ -117,6 +118,7 @@ struct TVDetailView: View {
                     } label: {
                         Text(profile.label)
                     }
+                    .accessibilityIdentifier("button_request_\(profile.id)")
                     .disabled(viewModel.isRequesting)
                 }
             }
@@ -148,6 +150,7 @@ struct TVDetailView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Overview")
                     .font(.headline)
+                    .accessibilityIdentifier("section_overview")
                 Text(overview)
                     .font(.body)
                     .foregroundStyle(.secondary)

@@ -6,10 +6,10 @@ actor OverseerrClient {
     private let session: URLSession
     private let decoder: JSONDecoder
 
-    init(baseURL: URL, apiKey: String) {
+    init(baseURL: URL, apiKey: String, session: URLSession = .shared) {
         self.baseURL = baseURL
         self.apiKey = apiKey
-        self.session = URLSession.shared
+        self.session = session
         self.decoder = JSONDecoder()
     }
 

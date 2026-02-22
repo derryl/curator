@@ -22,15 +22,19 @@ struct ContentView: View {
             HomeView(path: $homePath)
                 .tabItem { Label("Home", systemImage: "house") }
                 .tag(0)
+                .accessibilityIdentifier("tab_home")
             GenreListView(path: $browsePath)
                 .tabItem { Label("Browse", systemImage: "square.grid.2x2") }
                 .tag(1)
+                .accessibilityIdentifier("tab_browse")
             SearchView(path: $searchPath)
                 .tabItem { Label("Search", systemImage: "magnifyingglass") }
                 .tag(2)
+                .accessibilityIdentifier("tab_search")
             SettingsView(path: $settingsPath)
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(3)
+                .accessibilityIdentifier("tab_settings")
         }
         .onChange(of: selectedTab) {
             homePath = NavigationPath()
