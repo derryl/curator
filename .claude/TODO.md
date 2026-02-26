@@ -20,8 +20,14 @@
 - [x] **Fixed YouTube stream extraction** — replaced HTML-scraping approach (HLS URLs required auth headers) with innertube API using ANDROID client identity. Returns progressive MP4 URLs that `AVPlayer` plays directly. HTML scraping retained as fallback. — done in `1e8b2ac`
 - [x] **External fallback** — when all extraction strategies fail, opens YouTube app externally instead of showing empty player — done in `1e8b2ac`
 - [x] **Max quality playback** — upgraded from progressive formats (720p max) to adaptive formats (1080p+) using separate video+audio streams composed via `AVMutableComposition`. `StreamResult` carries both URLs; `TrailerSheet` composes them at playback time. Falls back to progressive if adaptive unavailable. — done in `4fc0eb5`
-- [x] **Unit tests** — 12 tests for `YouTubeStreamExtractor` covering adaptive format preference, resolution/bitrate selection, progressive fallback, innertube request format, response parsing, fallback chain, and error handling — done in `4fc0eb5`
-- [ ] Multiple BACK presses needed to dismiss the trailer player — `AVPlayerViewController` intercepts the Menu button for its own transport bar before the `.fullScreenCover` dismisses
+- [x] **Codec filtering** — filter adaptive formats to tvOS-compatible codecs only (H.264/H.265 video in mp4, AAC audio in mp4). VP9, AV1, and Opus are rejected, preventing silent playback failures and potential video signal loss on Apple TV. — done in `d4a0206`
+- [x] **Cascading quality fallback** — when 1080p adaptive URL returns 403, try 720p adaptive before dropping to progressive. Previously jumped directly to 720p progressive. — done in `d4a0206`
+- [x] **Audio URL validation** — validate both video AND audio URLs via HEAD request. Previously only video was validated; broken audio caused composition failure with silent video-only fallback. — done in `d4a0206`
+- [x] **TrailerError enum** — typed errors (ageRestricted, videoUnavailable, allStreamsBroken, networkError, compositionFailed, playbackTimeout) with user-facing messages. Previously all errors were swallowed as nil with no diagnostics. — done in `d4a0206`
+- [x] **Error UI** — show error alert with specific message and "Open in YouTube" fallback button on both MovieDetailView and TVDetailView. Previously silently opened YouTube externally on failure. — done in `d4a0206`
+- [x] **PiP disabled** — `allowsPictureInPicturePlayback = false` on player VC for cleaner dismiss behavior. — done in `d4a0206`
+- [x] **Unit tests** — 25 tests (up from 12) covering codec filtering, cascading quality, audio validation, all error types, user messages, HLS preference, and empty data handling — done in `d4a0206`
+- [ ] Multiple BACK presses needed to dismiss the trailer player — `AVPlayerViewController` intercepts the Menu button for its own transport bar before the `.fullScreenCover` dismisses. PiP disabled in `d4a0206` which helps but may not fully resolve on all tvOS versions.
 
 ## Trakt Integration (from research plan)
 
