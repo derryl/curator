@@ -4,6 +4,7 @@ struct HomeView: View {
     @Environment(AppState.self) private var appState
     @State private var viewModel = HomeViewModel()
     @Binding var path: NavigationPath
+    @Binding var scrollToTop: Bool
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -38,38 +39,53 @@ struct HomeView: View {
     }
 
     private var contentScrollView: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 40) {
-                // Trakt "Because you watched" shelves
-                ForEach(viewModel.recommendationShelves) { shelf in
-                    MediaShelfView(title: shelf.title, items: shelf.items)
-                }
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 40) {
+                    Color.clear
+                        .frame(height: 0)
+                        .id("home_top")
 
-                if !viewModel.trendingMovies.isEmpty {
-                    MediaShelfView(title: "Trending Movies", items: viewModel.trendingMovies)
-                }
+                    // Trakt "Because you watched" shelves
+                    ForEach(viewModel.recommendationShelves) { shelf in
+                        MediaShelfView(title: shelf.title, items: shelf.items)
+                    }
 
-                if !viewModel.trendingShows.isEmpty {
-                    MediaShelfView(title: "Trending Shows", items: viewModel.trendingShows)
-                }
+                    if !viewModel.trendingMovies.isEmpty {
+                        MediaShelfView(title: "Trending Movies", items: viewModel.trendingMovies)
+                    }
 
-                if !viewModel.popularMovies.isEmpty {
-                    MediaShelfView(title: "Popular Movies", items: viewModel.popularMovies)
-                }
+                    if !viewModel.trendingShows.isEmpty {
+                        MediaShelfView(title: "Trending Shows", items: viewModel.trendingShows)
+                    }
 
-                if !viewModel.popularShows.isEmpty {
-                    MediaShelfView(title: "Popular Shows", items: viewModel.popularShows)
-                }
+                    if !viewModel.popularMovies.isEmpty {
+                        MediaShelfView(title: "Popular Movies", items: viewModel.popularMovies)
+                    }
 
-                if !viewModel.upcomingMovies.isEmpty {
-                    MediaShelfView(title: "Upcoming Movies", items: viewModel.upcomingMovies)
-                }
+                    if !viewModel.popularShows.isEmpty {
+                        MediaShelfView(title: "Popular Shows", items: viewModel.popularShows)
+                    }
 
-                if !viewModel.upcomingShows.isEmpty {
-                    MediaShelfView(title: "Upcoming Shows", items: viewModel.upcomingShows)
+                    if !viewModel.upcomingMovies.isEmpty {
+                        MediaShelfView(title: "Upcoming Movies", items: viewModel.upcomingMovies)
+                    }
+
+                    if !viewModel.upcomingShows.isEmpty {
+                        MediaShelfView(title: "Upcoming Shows", items: viewModel.upcomingShows)
+                    }
+                }
+                .padding(.vertical, 40)
+            }
+            .onChange(of: scrollToTop) {
+                if scrollToTop {
+                    withAnimation { proxy.scrollTo("home_top", anchor: .top) }
+                    scrollToTop = false
                 }
             }
-            .padding(.vertical, 40)
+            .onExitCommand {
+                scrollToTop = true
+            }
         }
     }
 

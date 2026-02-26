@@ -103,4 +103,61 @@ final class NavigationTests: XCTestCase {
 
         XCTAssertTrue(homeTab.waitForExistence(timeout: 5), "Should return to previous screen after menu press")
     }
+
+    // MARK: - BACK Button Behavior
+
+    func testMenuButtonOnBrowseTabReturnsToHome() {
+        let remote = XCUIRemote.shared
+
+        let homeTab = app.descendants(matching: .any).matching(identifier: "tab_home").firstMatch
+        guard homeTab.waitForExistence(timeout: 10) else {
+            XCTFail("Home tab not visible")
+            return
+        }
+
+        // Navigate to Browse tab
+        remote.press(.right)
+        let browseTab = app.descendants(matching: .any).matching(identifier: "tab_browse").firstMatch
+        guard browseTab.waitForExistence(timeout: 5) else {
+            XCTFail("Browse tab not reachable")
+            return
+        }
+
+        // Press down to enter Browse content, then Menu to go back
+        remote.press(.down)
+        sleep(1)
+        remote.press(.menu)
+        sleep(1)
+
+        // Should return to Home tab (not exit app)
+        XCTAssertTrue(homeTab.waitForExistence(timeout: 5), "Menu on Browse should return to Home tab")
+    }
+
+    func testMenuButtonOnSearchTabReturnsToHome() {
+        let remote = XCUIRemote.shared
+
+        let homeTab = app.descendants(matching: .any).matching(identifier: "tab_home").firstMatch
+        guard homeTab.waitForExistence(timeout: 10) else {
+            XCTFail("Home tab not visible")
+            return
+        }
+
+        // Navigate to Search tab (right twice)
+        remote.press(.right)
+        remote.press(.right)
+        let searchTab = app.descendants(matching: .any).matching(identifier: "tab_search").firstMatch
+        guard searchTab.waitForExistence(timeout: 5) else {
+            XCTFail("Search tab not reachable")
+            return
+        }
+
+        // Press down into Search content, then Menu to go back
+        remote.press(.down)
+        sleep(1)
+        remote.press(.menu)
+        sleep(1)
+
+        // Should return to Home tab (not exit app)
+        XCTAssertTrue(homeTab.waitForExistence(timeout: 5), "Menu on Search should return to Home tab")
+    }
 }

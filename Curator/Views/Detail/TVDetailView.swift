@@ -36,7 +36,6 @@ struct TVDetailView: View {
                 heroSection
 
                 VStack(alignment: .leading, spacing: 40) {
-                    availabilityStatus
                     overviewSection
                     seasonsSection
                     castSection
@@ -141,6 +140,9 @@ struct TVDetailView: View {
                     .accessibilityIdentifier("button_request_\(profile.id)")
                     .disabled(viewModel.isRequesting)
                 }
+            } else {
+                StatusPill(status: status)
+                    .accessibilityIdentifier("status_pill")
             }
         }
         .focusScope(heroFocusScope)
@@ -157,12 +159,6 @@ struct TVDetailView: View {
     }
 
     // MARK: - Content Sections
-
-    @ViewBuilder
-    private var availabilityStatus: some View {
-        let status = viewModel.tvDetails?.mediaInfo?.availabilityStatus ?? item.availability
-        StatusPill(status: status)
-    }
 
     @ViewBuilder
     private var overviewSection: some View {

@@ -16,6 +16,8 @@ struct StatusPill: View {
         }
     }
 
+    var testPillConfig: (label: String, color: Color)? { pillConfig }
+
     private var pillConfig: (label: String, color: Color)? {
         switch status {
         case .available:

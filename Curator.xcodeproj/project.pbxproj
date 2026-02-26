@@ -18,6 +18,7 @@
 		1B0A011AFAD0C2E529828E55 /* MediaResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7750992F17A82790E3047954 /* MediaResolver.swift */; };
 		1CA5CFBE0035554D0A3081B3 /* NavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ECAAEDBEC59B4348AA21A62 /* NavigationTests.swift */; };
 		1E9CE209BE61175BBD6CAD6E /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EE147F35BA46F82E0D0F750 /* LoadingView.swift */; };
+		1FD1B30E5FDD72E7B3B5A6CD /* StatusPillPlacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100EF3B47BB72DD4F247A4F2 /* StatusPillPlacementTests.swift */; };
 		207F7BD8AA16069A5D13B552 /* StatusPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA4905D1CBF660843892CEB5 /* StatusPill.swift */; };
 		255295123EDEE6ACB60406F2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB95188E07546B249FCD4DFF /* SettingsView.swift */; };
 		283E58560BF87BBDC15CF9AD /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3736D42E4590E51BB994674 /* SettingsViewModel.swift */; };
@@ -96,6 +97,7 @@
 
 /* Begin PBXFileReference section */
 		0F474E0233EAAE5C559D3E8F /* MediaShelfView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaShelfView.swift; sourceTree = "<group>"; };
+		100EF3B47BB72DD4F247A4F2 /* StatusPillPlacementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusPillPlacementTests.swift; sourceTree = "<group>"; };
 		13BDE94C6ED6372DEC6D582F /* MediaCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaCard.swift; sourceTree = "<group>"; };
 		1803BDE1FC7DA3F507D0A7BA /* UserDefaultsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsKeys.swift; sourceTree = "<group>"; };
 		1ECAAEDBEC59B4348AA21A62 /* NavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationTests.swift; sourceTree = "<group>"; };
@@ -350,6 +352,7 @@
 				D45C09D7BF45313E50DEB70D /* DetailViewModelTests.swift */,
 				AF3A96BFCFE2D07B0DC5671E /* OverseerrClientTests.swift */,
 				5F824B832812F3CACE5DE927 /* QualityOptionTests.swift */,
+				100EF3B47BB72DD4F247A4F2 /* StatusPillPlacementTests.swift */,
 				6857CC7FF1F9A91633A49BB1 /* YouTubeLiveIntegrationTests.swift */,
 				505902DCD91BFDD8222C4456 /* YouTubeStreamExtractorTests.swift */,
 			);
@@ -606,6 +609,7 @@
 				D9728380AFC9FDD9601BF2FD /* MockURLProtocol.swift in Sources */,
 				B8F045285592E4173302822C /* OverseerrClientTests.swift in Sources */,
 				B02E138F97D6FB2AD84CE6D3 /* QualityOptionTests.swift in Sources */,
+				1FD1B30E5FDD72E7B3B5A6CD /* StatusPillPlacementTests.swift in Sources */,
 				C69C3D1FD75A3FABD32FE656 /* TestFixtures.swift in Sources */,
 				E9EA0435BC3942F87D247EDC /* YouTubeLiveIntegrationTests.swift in Sources */,
 				8EC8C38FCECCDD29D125C2A8 /* YouTubeStreamExtractorTests.swift in Sources */,

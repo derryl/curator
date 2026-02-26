@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var browsePath = NavigationPath()
     @State private var searchPath = NavigationPath()
     @State private var settingsPath = NavigationPath()
+    @State private var homeScrollToTop = false
 
     var body: some View {
         if appState.hasCompletedOnboarding {
@@ -19,19 +20,22 @@ struct ContentView: View {
 
     private var mainTabView: some View {
         TabView(selection: $selectedTab) {
-            HomeView(path: $homePath)
+            HomeView(path: $homePath, scrollToTop: $homeScrollToTop)
                 .tabItem { Label("Home", systemImage: "house") }
                 .tag(0)
                 .accessibilityIdentifier("tab_home")
             GenreListView(path: $browsePath)
+                .onExitCommand { selectedTab = 0 }
                 .tabItem { Label("Browse", systemImage: "square.grid.2x2") }
                 .tag(1)
                 .accessibilityIdentifier("tab_browse")
             SearchView(path: $searchPath)
+                .onExitCommand { selectedTab = 0 }
                 .tabItem { Label("Search", systemImage: "magnifyingglass") }
                 .tag(2)
                 .accessibilityIdentifier("tab_search")
             SettingsView(path: $settingsPath)
+                .onExitCommand { selectedTab = 0 }
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(3)
                 .accessibilityIdentifier("tab_settings")
