@@ -5,7 +5,7 @@
 **Curator** is a native SwiftUI tvOS app for Apple TV that replaces the browsing/discovery UI of Overseerr with a personalized experience powered by Trakt, while keeping Overseerr as the backend for submitting and tracking media requests.
 
 - **Repo:** `~/playground/curator` (push to `github.com/derryl/curator`)
-- **Platform:** tvOS 17+ (SwiftUI, Swift 5.9+)
+- **Platform:** tvOS 17+ (SwiftUI, Swift 6)
 - **Distribution:** TestFlight
 - **Dependencies:** Zero third-party SPM packages (URLSession, AsyncImage, Keychain APIs only)
 
@@ -168,7 +168,7 @@ Curator/
 │   │   ├── MediaShelfView.swift             # Horizontal ScrollView + LazyHStack + .focusSection()
 │   │   ├── ShelfHeaderView.swift            # Title + "See All" button
 │   │   ├── DeviceCodeView.swift             # Shows Trakt code + URL prominently
-│   │   ├── YouTubePlayerView.swift          # TrailerSheet + AVPlayerViewController + YouTube stream extractor (WIP)
+│   │   ├── YouTubePlayerView.swift          # TrailerPlayer + AVPlayerViewController + YouTubeStreamExtractor (codec filtering, cascading quality, error UI)
 │   │   ├── LoadingView.swift
 │   │   └── ErrorView.swift                  # Error state with retry button
 │   │
@@ -191,9 +191,10 @@ Views (SwiftUI) ──reads──> ViewModels (@Observable) ──calls──> S
                                                               Models (Codable)
 ```
 
-- **@Observable** (Swift 5.9 macro) for all ViewModels - no Combine needed
+- **@Observable** (Swift 5.9+ macro) for all ViewModels - no Combine needed
 - **NavigationStack** with `navigationDestination` for drill-down navigation
 - **TabView** at root (auto-hides top bar on scroll - native tvOS behavior)
+- **`.onExitCommand`** on non-Home tabs returns to Home; on Home, scrolls to top via `ScrollViewReader`
 - **async/await** throughout - no callbacks, no Combine publishers
 - All API clients are Swift `actor` types for thread safety
 
@@ -270,13 +271,13 @@ Sections:
 ### Detail Screens (push navigation from any MediaCard)
 
 **MovieDetailView / TVDetailView:**
-- Hero: backdrop (blurred bg) + poster + title + year + runtime + genres
-- AvailabilityBadge + StatusPill
-- "Request" button (if not already available/requested) -> confirmation alert -> `POST /api/v1/request`
+- Hero: full-width backdrop + poster + title + year + runtime + genres
+- Action buttons row: Trailer button + Request quality buttons (or StatusPill when requested/available)
+- In-app trailer playback via YouTube stream extraction (1080p+ adaptive, tvOS codec filtering, error alerts)
+- `appliesPreferredDisplayCriteriaAutomatically = false` prevents Dolby Vision black screen flash
 - Overview text
-- Cast/crew metadata
-- "Similar" shelf (Overseerr `/movie/{id}/similar`)
-- "Recommended" shelf (Overseerr `/movie/{id}/recommendations`)
+- Cast/crew horizontal scroll
+- "You Might Like" shelf (merged similar + recommended, genre-filtered)
 
 **PersonDetailView:**
 - Bio + filmography grid via Overseerr `/person/{id}/combined_credits`
@@ -368,14 +369,26 @@ Device Code OAuth 2.0 — ideal for TV (no keyboard-heavy entry):
 
 **Milestone:** Personalized discovery powered by Trakt watch history. ACHIEVED
 
-### Phase 5: Polish
-24. `PersonDetailView`
+### Phase 5: Polish -- IN PROGRESS
+24. ~~`PersonDetailView`~~ -- COMPLETE
 25. ~~Error handling views with retry~~ -- `ErrorView` component built in Phase 2
 26. ~~Loading states throughout~~ -- `LoadingView` component built in Phase 2
-27. Focus navigation refinement
-28. App icon and launch screen
+27. ~~Focus navigation refinement~~ -- `.onExitCommand` returns non-Home tabs to Home, Home scrolls to top
+28. ~~App icon~~ -- Custom icon with improved cropping
 29. TestFlight build and distribution
 30. "See All" paginated grid views (deferred from Phase 3)
+31. ~~In-app trailer playback~~ -- Full YouTube stream extraction with codec filtering, cascading quality, Dolby Vision fix, error UI, 36 unit+integration tests
+32. ~~Status pill placement~~ -- Moved inline with hero action buttons (replaces request buttons when status active)
+
+### Phase 6: Future Opportunities
+33. Trakt user custom lists and watchlist integration
+34. Requests tab — view/manage submitted requests with status tracking
+35. Region/language picker in Settings for content filtering
+36. Deep link support (Siri, URL schemes)
+37. Background refresh for request status polling
+38. Custom lightweight trailer player (bypass AVPlayerViewController transport bar for instant Menu dismiss)
+39. Scroll position restoration when returning from detail views
+40. Top Shelf Image assets for Apple TV home screen
 
 ---
 
