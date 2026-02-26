@@ -91,6 +91,12 @@ final class TrailerPlayer {
         playerVC.modalPresentationStyle = .fullScreen
         playerVC.allowsPictureInPicturePlayback = false
 
+        // Prevent Dolby Vision / HDR output mode switch for SDR YouTube trailers.
+        // Without this, tvOS auto-switches the display from DV to SDR on play and
+        // back on dismiss, causing a ~1-2s black screen flash while the TV re-syncs.
+        // YouTube trailers are always SDR, so mode switching is never beneficial.
+        playerVC.appliesPreferredDisplayCriteriaAutomatically = false
+
         guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
               let rootVC = scene.windows.first?.rootViewController else { return }
         var topVC = rootVC
