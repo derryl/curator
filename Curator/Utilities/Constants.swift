@@ -7,8 +7,8 @@ enum Constants {
         static let baseURL = URL(string: "https://api.trakt.tv")!
         static let apiVersion = "2"
         static let redirectURI = "urn:ietf:wg:oauth:2.0:oob"
-        static let clientId = "REDACTED_TRAKT_CLIENT_ID"
-        static let clientSecret = "REDACTED_TRAKT_CLIENT_SECRET"
+        static let clientId = Bundle.main.infoDictionary?["TRAKT_CLIENT_ID"] as? String ?? ""
+        static let clientSecret = Bundle.main.infoDictionary?["TRAKT_CLIENT_SECRET"] as? String ?? ""
     }
 
     // MARK: - Overseerr API
@@ -41,7 +41,7 @@ enum Constants {
     // MARK: - CouchMoney
 
     enum CouchMoney {
-        static let username = "REDACTED_USERNAME"
+        static let username = Bundle.main.infoDictionary?["COUCHMONEY_USERNAME"] as? String ?? ""
         static let movieListSlug = "couchmoney-movies"
         static let showListSlug = "couchmoney-shows"
     }

@@ -5,10 +5,10 @@ import Observation
 @Observable
 final class SettingsViewModel {
     #if DEBUG
-    var connectionType = "http"
-    var address = "REDACTED_IP"
-    var port = "30002"
-    var apiKey = "REDACTED_OVERSEERR_API_KEY"
+    var connectionType = Bundle.main.infoDictionary?["DEBUG_OVERSEERR_CONNECTION_TYPE"] as? String ?? "http"
+    var address = Bundle.main.infoDictionary?["DEBUG_OVERSEERR_ADDRESS"] as? String ?? ""
+    var port = Bundle.main.infoDictionary?["DEBUG_OVERSEERR_PORT"] as? String ?? "5055"
+    var apiKey = Bundle.main.infoDictionary?["DEBUG_OVERSEERR_API_KEY"] as? String ?? ""
     #else
     var connectionType = "http"
     var address = ""

@@ -20,3 +20,6 @@ Packages/
 *.code-workspace
 
 .env.local
+
+# Build configuration secrets
+Curator/Config/Secrets.xcconfig

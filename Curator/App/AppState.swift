@@ -25,39 +25,36 @@ final class AppState {
         if let address = UserDefaults.standard.string(for: .overseerrAddress),
            !address.isEmpty,
            let apiKey = KeychainHelper.readString(key: .overseerrAPIKey) {
-            #if DEBUG
-            // If a stale Tailscale IP is persisted, skip restoration and fall through to debug defaults
-            let staleTailscaleIP = "REDACTED_IP"
-            let shouldRestore = address != staleTailscaleIP
-            #else
-            let shouldRestore = true
-            #endif
-            if shouldRestore {
-                let connectionType = UserDefaults.standard.string(for: .overseerrConnectionType) ?? "http"
-                let port = UserDefaults.standard.integer(for: .overseerrPort)
-                let effectivePort = port > 0 ? port : Constants.Overseerr.defaultPort
-                let urlString = "\(connectionType)://\(address):\(effectivePort)"
-                if let url = URL(string: urlString) {
-                    self.overseerrClient = OverseerrClient(baseURL: url, apiKey: apiKey)
-                    self.isOverseerrConfigured = true
-                }
+            let connectionType = UserDefaults.standard.string(for: .overseerrConnectionType) ?? "http"
+            let port = UserDefaults.standard.integer(for: .overseerrPort)
+            let effectivePort = port > 0 ? port : Constants.Overseerr.defaultPort
+            let urlString = "\(connectionType)://\(address):\(effectivePort)"
+            if let url = URL(string: urlString) {
+                self.overseerrClient = OverseerrClient(baseURL: url, apiKey: apiKey)
+                self.isOverseerrConfigured = true
             }
         }
 
         #if DEBUG
         if !isOverseerrConfigured {
-            // Auto-configure with hardcoded test credentials in debug builds
-            let debugURL = URL(string: "http://REDACTED_IP:30002")!
-            let debugAPIKey = "REDACTED_OVERSEERR_API_KEY"
-            self.overseerrClient = OverseerrClient(baseURL: debugURL, apiKey: debugAPIKey)
-            self.isOverseerrConfigured = true
-            self.hasCompletedOnboarding = true
-            // Persist so subsequent launches skip onboarding
-            UserDefaults.standard.set("http", for: .overseerrConnectionType)
-            UserDefaults.standard.set("REDACTED_IP", for: .overseerrAddress)
-            UserDefaults.standard.set(30002, for: .overseerrPort)
-            try? KeychainHelper.save(debugAPIKey, for: .overseerrAPIKey)
-            UserDefaults.standard.set(true, for: .hasCompletedOnboarding)
+            // Auto-configure from build settings (Secrets.xcconfig -> Info.plist)
+            let info = Bundle.main.infoDictionary ?? [:]
+            let connType = info["DEBUG_OVERSEERR_CONNECTION_TYPE"] as? String ?? "http"
+            let addr = info["DEBUG_OVERSEERR_ADDRESS"] as? String ?? ""
+            let port = info["DEBUG_OVERSEERR_PORT"] as? String ?? ""
+            let key = info["DEBUG_OVERSEERR_API_KEY"] as? String ?? ""
+
+            if !addr.isEmpty, !key.isEmpty,
+               let url = URL(string: "\(connType)://\(addr):\(port)") {
+                self.overseerrClient = OverseerrClient(baseURL: url, apiKey: key)
+                self.isOverseerrConfigured = true
+                self.hasCompletedOnboarding = true
+                UserDefaults.standard.set(connType, for: .overseerrConnectionType)
+                UserDefaults.standard.set(addr, for: .overseerrAddress)
+                UserDefaults.standard.set(Int(port) ?? 5055, for: .overseerrPort)
+                try? KeychainHelper.save(key, for: .overseerrAPIKey)
+                UserDefaults.standard.set(true, for: .hasCompletedOnboarding)
+            }
         }
         #endif
 
@@ -66,12 +63,16 @@ final class AppState {
         self.traktAuthManager = traktAuth
 
         #if DEBUG
-        // Seed Trakt tokens if not already in Keychain
         if !traktAuth.isAuthenticated {
-            try? KeychainHelper.save("REDACTED_TRAKT_ACCESS_TOKEN", for: .traktAccessToken)
-            try? KeychainHelper.save("REDACTED_TRAKT_REFRESH_TOKEN", for: .traktRefreshToken)
-            self.isTraktConnected = true
-            UserDefaults.standard.set(true, for: .traktIsConnected)
+            let info = Bundle.main.infoDictionary ?? [:]
+            let accessToken = info["DEBUG_TRAKT_ACCESS_TOKEN"] as? String ?? ""
+            let refreshToken = info["DEBUG_TRAKT_REFRESH_TOKEN"] as? String ?? ""
+            if !accessToken.isEmpty {
+                try? KeychainHelper.save(accessToken, for: .traktAccessToken)
+                try? KeychainHelper.save(refreshToken, for: .traktRefreshToken)
+                self.isTraktConnected = true
+                UserDefaults.standard.set(true, for: .traktIsConnected)
+            }
         }
         #endif
 

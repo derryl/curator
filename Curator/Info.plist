@@ -7,5 +7,23 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>TRAKT_CLIENT_ID</key>
+	<string>$(TRAKT_CLIENT_ID)</string>
+	<key>TRAKT_CLIENT_SECRET</key>
+	<string>$(TRAKT_CLIENT_SECRET)</string>
+	<key>DEBUG_OVERSEERR_CONNECTION_TYPE</key>
+	<string>$(DEBUG_OVERSEERR_CONNECTION_TYPE)</string>
+	<key>DEBUG_OVERSEERR_ADDRESS</key>
+	<string>$(DEBUG_OVERSEERR_ADDRESS)</string>
+	<key>DEBUG_OVERSEERR_PORT</key>
+	<string>$(DEBUG_OVERSEERR_PORT)</string>
+	<key>DEBUG_OVERSEERR_API_KEY</key>
+	<string>$(DEBUG_OVERSEERR_API_KEY)</string>
+	<key>DEBUG_TRAKT_ACCESS_TOKEN</key>
+	<string>$(DEBUG_TRAKT_ACCESS_TOKEN)</string>
+	<key>DEBUG_TRAKT_REFRESH_TOKEN</key>
+	<string>$(DEBUG_TRAKT_REFRESH_TOKEN)</string>
+	<key>COUCHMONEY_USERNAME</key>
+	<string>$(COUCHMONEY_USERNAME)</string>
 </dict>
 </plist>
