@@ -34,6 +34,8 @@ final class DetailViewModelTests: XCTestCase {
                 data = TestFixtures.recommendedMoviesJSON
             } else if path.contains("/movie/550") {
                 data = TestFixtures.movieDetailsJSON
+            } else if path.contains("/person/") && path.contains("/combined_credits") {
+                data = TestFixtures.personCombinedCreditsJSON
             } else if path.contains("/service/radarr/") {
                 data = TestFixtures.radarrServiceDetailsJSON
             } else if path.contains("/service/radarr") {

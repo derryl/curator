@@ -9,6 +9,8 @@ final class DetailViewModel {
     var youMightLikeItems: [MediaItem] = []
     var similarItems: [MediaItem] = []
     var recommendedItems: [MediaItem] = []
+    var directorShelf: (name: String, items: [MediaItem])?
+    var leadActorShelf: (name: String, items: [MediaItem])?
     var isLoading = false
     var errorMessage: String?
     var isRequesting = false
@@ -47,8 +49,15 @@ final class DetailViewModel {
                 genreIds: movieGenreIds
             )
 
-            // Fetch quality profiles from Radarr
-            await loadQualityProfiles(for: "movie", using: client)
+            // Fetch person-based shelves and quality profiles concurrently
+            async let personShelvesTask: Void = loadPersonShelves(
+                credits: details.credits,
+                currentTmdbId: tmdbId,
+                isMovie: true,
+                using: client
+            )
+            async let profilesTask: Void = loadQualityProfiles(for: "movie", using: client)
+            _ = await (personShelvesTask, profilesTask)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -79,8 +88,15 @@ final class DetailViewModel {
                 genreIds: tvGenreIds
             )
 
-            // Fetch quality profiles from Sonarr
-            await loadQualityProfiles(for: "tv", using: client)
+            // Fetch person-based shelves and quality profiles concurrently
+            async let personShelvesTask: Void = loadPersonShelves(
+                credits: details.credits,
+                currentTmdbId: tmdbId,
+                isMovie: false,
+                using: client
+            )
+            async let profilesTask: Void = loadQualityProfiles(for: "tv", using: client)
+            _ = await (personShelvesTask, profilesTask)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -159,6 +175,141 @@ final class DetailViewModel {
             // Keep items that share at least one genre
             return !genreIds.isDisjoint(with: item.genreIds)
         }
+    }
+
+    /// Load "More from [Director]" and "More with [Lead Actor]" shelves from credits.
+    private func loadPersonShelves(
+        credits: OverseerrCredits?,
+        currentTmdbId: Int,
+        isMovie: Bool,
+        using client: OverseerrClient
+    ) async {
+        guard let credits else { return }
+
+        // Find the key creative: director for movies, executive producer for TV
+        let keyCreative: OverseerrCrewMember? = credits.crew?.first {
+            isMovie ? $0.job == "Director" : $0.job == "Executive Producer"
+        }
+
+        // Find the first-billed cast member
+        let leadActor: OverseerrCastMember? = credits.cast?.first
+
+        // Fetch both filmographies concurrently
+        async let directorTask = fetchPersonFilmography(
+            person: keyCreative.map { (id: $0.id, name: $0.name ?? "Unknown") },
+            currentTmdbId: currentTmdbId,
+            using: client
+        )
+        async let actorTask = fetchPersonFilmography(
+            person: leadActor.map { (id: $0.id, name: $0.name ?? "Unknown") },
+            currentTmdbId: currentTmdbId,
+            using: client
+        )
+
+        let (directorResult, actorResult) = await (directorTask, actorTask)
+        directorShelf = directorResult
+        leadActorShelf = actorResult
+    }
+
+    /// Fetch a person's combined credits and return as a named filmography shelf.
+    private nonisolated func fetchPersonFilmography(
+        person: (id: Int, name: String)?,
+        currentTmdbId: Int,
+        using client: OverseerrClient
+    ) async -> (name: String, items: [MediaItem])? {
+        guard let person else { return nil }
+
+        guard let credits = try? await client.personCombinedCredits(personId: person.id) else {
+            return nil
+        }
+
+        var seen = Set<String>()
+        var items: [MediaItem] = []
+
+        // Include both cast and crew credits
+        if let cast = credits.cast {
+            for credit in cast {
+                guard credit.id != currentTmdbId,
+                      let mediaType = credit.mediaType,
+                      let item = Self.mediaItemFrom(credit: credit, mediaType: mediaType),
+                      seen.insert(item.id).inserted else { continue }
+                items.append(item)
+            }
+        }
+        if let crew = credits.crew {
+            for credit in crew {
+                guard credit.id != currentTmdbId,
+                      let mediaType = credit.mediaType,
+                      let item = Self.mediaItemFrom(crewCredit: credit, mediaType: mediaType),
+                      seen.insert(item.id).inserted else { continue }
+                items.append(item)
+            }
+        }
+
+        // Sort by rating descending, cap at 15
+        items.sort { ($0.voteAverage ?? 0) > ($1.voteAverage ?? 0) }
+        items = Array(items.prefix(15))
+
+        guard !items.isEmpty else { return nil }
+        return (name: person.name, items: items)
+    }
+
+    /// Convert a cast credit into a MediaItem. Shared logic extracted from PersonViewModel.
+    nonisolated static func mediaItemFrom(credit: PersonCreditCast, mediaType: String) -> MediaItem? {
+        let type: MediaItem.MediaType
+        switch mediaType {
+        case "movie": type = .movie
+        case "tv": type = .tv
+        default: return nil
+        }
+
+        let year: Int? = (credit.releaseDate ?? credit.firstAirDate).flatMap { dateString in
+            guard dateString.count >= 4 else { return nil }
+            return Int(dateString.prefix(4))
+        }
+
+        return MediaItem(
+            id: "\(type.rawValue)-\(credit.id)",
+            tmdbId: credit.id,
+            mediaType: type,
+            title: credit.displayTitle,
+            year: year,
+            overview: nil,
+            posterPath: credit.posterPath,
+            backdropPath: credit.backdropPath,
+            voteAverage: credit.voteAverage,
+            genreIds: [],
+            availability: credit.mediaInfo?.availabilityStatus ?? .none
+        )
+    }
+
+    /// Convert a crew credit into a MediaItem. Shared logic extracted from PersonViewModel.
+    nonisolated static func mediaItemFrom(crewCredit: PersonCreditCrew, mediaType: String) -> MediaItem? {
+        let type: MediaItem.MediaType
+        switch mediaType {
+        case "movie": type = .movie
+        case "tv": type = .tv
+        default: return nil
+        }
+
+        let year: Int? = (crewCredit.releaseDate ?? crewCredit.firstAirDate).flatMap { dateString in
+            guard dateString.count >= 4 else { return nil }
+            return Int(dateString.prefix(4))
+        }
+
+        return MediaItem(
+            id: "\(type.rawValue)-\(crewCredit.id)",
+            tmdbId: crewCredit.id,
+            mediaType: type,
+            title: crewCredit.displayTitle,
+            year: year,
+            overview: nil,
+            posterPath: crewCredit.posterPath,
+            backdropPath: crewCredit.backdropPath,
+            voteAverage: crewCredit.voteAverage,
+            genreIds: [],
+            availability: crewCredit.mediaInfo?.availabilityStatus ?? .none
+        )
     }
 
     private func loadQualityProfiles(for mediaType: String, using client: OverseerrClient) async {

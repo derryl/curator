@@ -67,6 +67,14 @@ struct HomeView: View {
                         MediaShelfView(title: "Popular Shows", items: viewModel.popularShows)
                     }
 
+                    if !viewModel.topRatedMovies.isEmpty {
+                        MediaShelfView(title: "Top Rated Movies", items: viewModel.topRatedMovies)
+                    }
+
+                    if !viewModel.topRatedShows.isEmpty {
+                        MediaShelfView(title: "Top Rated Shows", items: viewModel.topRatedShows)
+                    }
+
                     if !viewModel.upcomingMovies.isEmpty {
                         MediaShelfView(title: "Upcoming Movies", items: viewModel.upcomingMovies)
                     }
@@ -96,6 +104,8 @@ struct HomeView: View {
         !viewModel.popularShows.isEmpty ||
         !viewModel.upcomingMovies.isEmpty ||
         !viewModel.upcomingShows.isEmpty ||
+        !viewModel.topRatedMovies.isEmpty ||
+        !viewModel.topRatedShows.isEmpty ||
         !viewModel.recommendationShelves.isEmpty
     }
 

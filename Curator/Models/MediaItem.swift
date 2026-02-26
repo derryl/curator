@@ -19,6 +19,18 @@ struct MediaItem: Identifiable, Hashable, Sendable {
 
     enum AvailabilityStatus: Sendable {
         case unknown, available, partiallyAvailable, processing, pending, none
+
+        /// Sort priority for recommendation shelves: lower = more actionable (can request immediately).
+        var requestPriority: Int {
+            switch self {
+            case .none: 0              // Not in library — can request now
+            case .unknown: 1           // Status unclear — likely requestable
+            case .partiallyAvailable: 2 // Some content exists
+            case .pending: 3           // Already requested
+            case .processing: 4        // Being downloaded
+            case .available: 5         // Already owned
+            }
+        }
     }
 }
 

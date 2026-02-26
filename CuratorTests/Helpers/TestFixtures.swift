@@ -206,6 +206,125 @@ enum TestFixtures {
         return try! JSONSerialization.data(withJSONObject: json)
     }()
 
+    // MARK: - Person Combined Credits JSON
+
+    static let personCombinedCreditsJSON: Data = {
+        let json: [String: Any] = [
+            "id": 138,
+            "cast": [
+                [
+                    "id": 100,
+                    "mediaType": "movie",
+                    "title": "Other Movie A",
+                    "posterPath": "/a.jpg",
+                    "backdropPath": "/a_bd.jpg",
+                    "voteAverage": 7.8,
+                    "releaseDate": "2005-06-15",
+                ] as [String: Any],
+                [
+                    "id": 550,
+                    "mediaType": "movie",
+                    "title": "Fight Club",
+                    "posterPath": "/fc.jpg",
+                    "backdropPath": "/fc_bd.jpg",
+                    "voteAverage": 8.4,
+                    "releaseDate": "1999-10-15",
+                ] as [String: Any],
+                [
+                    "id": 200,
+                    "mediaType": "movie",
+                    "title": "Other Movie B",
+                    "posterPath": "/b.jpg",
+                    "backdropPath": "/b_bd.jpg",
+                    "voteAverage": 6.5,
+                    "releaseDate": "2010-03-20",
+                ] as [String: Any],
+            ],
+            "crew": [
+                [
+                    "id": 300,
+                    "mediaType": "movie",
+                    "title": "Directed Movie",
+                    "posterPath": "/d.jpg",
+                    "backdropPath": "/d_bd.jpg",
+                    "voteAverage": 8.0,
+                    "job": "Director",
+                    "department": "Directing",
+                    "releaseDate": "2015-07-10",
+                ] as [String: Any],
+            ],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json)
+    }()
+
+    // MARK: - Movie Details with Crew JSON
+
+    static let movieDetailsWithCrewJSON: Data = {
+        let json: [String: Any] = [
+            "id": 550,
+            "title": "Fight Club",
+            "overview": "An insomniac office worker...",
+            "posterPath": "/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg",
+            "backdropPath": "/hZkgoQYus5dXo3H8T7Uef6DNknx.jpg",
+            "voteAverage": 8.4,
+            "releaseDate": "1999-10-15",
+            "runtime": 139,
+            "genres": [
+                ["id": 18, "name": "Drama"],
+                ["id": 53, "name": "Thriller"],
+            ],
+            "credits": [
+                "cast": [
+                    ["id": 819, "name": "Edward Norton", "character": "The Narrator", "profilePath": "/123.jpg"],
+                    ["id": 287, "name": "Brad Pitt", "character": "Tyler Durden", "profilePath": "/456.jpg"],
+                ],
+                "crew": [
+                    ["id": 7467, "name": "David Fincher", "job": "Director", "department": "Directing", "profilePath": "/df.jpg"],
+                    ["id": 999, "name": "Art Linson", "job": "Producer", "department": "Production", "profilePath": "/al.jpg"],
+                ],
+            ],
+            "relatedVideos": [
+                ["url": "https://youtube.com/watch?v=abc123", "key": "abc123", "name": "Official Trailer", "site": "YouTube", "type": "Trailer", "size": 1080],
+            ],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json)
+    }()
+
+    // MARK: - TV Details with Crew JSON
+
+    static let tvDetailsWithCrewJSON: Data = {
+        let json: [String: Any] = [
+            "id": 1399,
+            "name": "Breaking Bad",
+            "overview": "A chemistry teacher...",
+            "posterPath": "/ggFHVNu6YYI5L9pCfOacjizRGt.jpg",
+            "backdropPath": "/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg",
+            "voteAverage": 8.9,
+            "firstAirDate": "2008-01-20",
+            "numberOfSeasons": 5,
+            "numberOfEpisodes": 62,
+            "genres": [
+                ["id": 18, "name": "Drama"],
+                ["id": 80, "name": "Crime"],
+            ],
+            "seasons": [
+                ["id": 3572, "seasonNumber": 1, "name": "Season 1", "episodeCount": 7, "overview": "S1", "posterPath": "/s1.jpg"],
+            ],
+            "credits": [
+                "cast": [
+                    ["id": 17419, "name": "Bryan Cranston", "character": "Walter White", "profilePath": "/789.jpg"],
+                ],
+                "crew": [
+                    ["id": 66633, "name": "Vince Gilligan", "job": "Executive Producer", "department": "Production", "profilePath": "/vg.jpg"],
+                ],
+            ],
+            "relatedVideos": [
+                ["url": "https://youtube.com/watch?v=def456", "key": "def456", "name": "Official Trailer", "site": "YouTube", "type": "Trailer", "size": 1080],
+            ],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json)
+    }()
+
     // MARK: - Error JSON
 
     static func errorJSON(message: String = "Internal Server Error") -> Data {

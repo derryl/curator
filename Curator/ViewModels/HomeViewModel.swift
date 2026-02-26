@@ -10,6 +10,8 @@ final class HomeViewModel {
     var popularShows: [MediaItem] = []
     var upcomingMovies: [MediaItem] = []
     var upcomingShows: [MediaItem] = []
+    var topRatedMovies: [MediaItem] = []
+    var topRatedShows: [MediaItem] = []
     var recommendationShelves: [RecommendationShelf] = []
     var isLoading = false
     var errorMessage: String?
@@ -45,8 +47,28 @@ final class HomeViewModel {
             errorMessage = "Overseerr is not configured"
         }
 
+        deriveTopRatedShelves()
         deduplicateShelves()
         isLoading = false
+    }
+
+    /// Derive "Top Rated" shelves from popular content — titles with voteAverage >= 7.5, sorted by rating.
+    func deriveTopRatedShelves() {
+        let allMovies = popularMovies + trendingMovies + upcomingMovies
+        topRatedMovies = Array(
+            allMovies
+                .filter { ($0.voteAverage ?? 0) >= 7.5 }
+                .sorted { ($0.voteAverage ?? 0) > ($1.voteAverage ?? 0) }
+                .prefix(15)
+        )
+
+        let allShows = popularShows + trendingShows + upcomingShows
+        topRatedShows = Array(
+            allShows
+                .filter { ($0.voteAverage ?? 0) >= 7.5 }
+                .sorted { ($0.voteAverage ?? 0) > ($1.voteAverage ?? 0) }
+                .prefix(15)
+        )
     }
 
     /// Remove duplicate items across all shelves so each title appears only once on screen.
@@ -74,6 +96,8 @@ final class HomeViewModel {
         dedup(&popularShows)
         dedup(&upcomingMovies)
         dedup(&upcomingShows)
+        dedup(&topRatedMovies)
+        dedup(&topRatedShows)
     }
 
     // MARK: - Overseerr Fallback
@@ -204,14 +228,14 @@ final class HomeViewModel {
             shelves.append(RecommendationShelf(
                 id: "couchmoney-movies",
                 title: "Recommended Movies",
-                items: movieResults
+                items: sortByRequestPriority(movieResults)
             ))
         }
         if !showResults.isEmpty {
             shelves.append(RecommendationShelf(
                 id: "couchmoney-shows",
                 title: "Recommended Shows",
-                items: showResults
+                items: sortByRequestPriority(showResults)
             ))
         }
         return shelves
@@ -243,14 +267,14 @@ final class HomeViewModel {
             shelves.append(RecommendationShelf(
                 id: "trakt-ml-movies",
                 title: "For You: Movies",
-                items: movieResults
+                items: sortByRequestPriority(movieResults)
             ))
         }
         if !showResults.isEmpty {
             shelves.append(RecommendationShelf(
                 id: "trakt-ml-shows",
                 title: "For You: Shows",
-                items: showResults
+                items: sortByRequestPriority(showResults)
             ))
         }
         return shelves
@@ -314,7 +338,7 @@ final class HomeViewModel {
                 shelves.append(RecommendationShelf(
                     id: "rec-\(seed.tmdbId)",
                     title: "Because you watched \(seed.title)",
-                    items: items
+                    items: sortByRequestPriority(items)
                 ))
             }
         }
@@ -332,6 +356,11 @@ final class HomeViewModel {
         guard parts.count >= 3 else { return nil }
         // Use first two words as franchise prefix
         return parts.prefix(2).joined(separator: "-")
+    }
+
+    /// Sort items so the most requestable ones appear first within a shelf.
+    nonisolated static func sortByRequestPriority(_ items: [MediaItem]) -> [MediaItem] {
+        items.sorted { $0.availability.requestPriority < $1.availability.requestPriority }
     }
 
     // MARK: - Trending & Popular (unchanged — no filtering)

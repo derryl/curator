@@ -39,6 +39,8 @@ struct MovieDetailView: View {
                     overviewSection
                     castSection
                     youMightLikeSection
+                    directorShelfSection
+                    leadActorShelfSection
                 }
                 .padding(.horizontal, 60)
             }
@@ -232,6 +234,50 @@ struct MovieDetailView: View {
                 ScrollView(.horizontal) {
                     LazyHStack(spacing: 30) {
                         ForEach(viewModel.youMightLikeItems) { item in
+                            NavigationLink(value: item) {
+                                MediaCard(item: item)
+                            }
+                            .buttonStyle(.focusableCard)
+                        }
+                    }
+                    .padding(.horizontal, 4)
+                }
+                .focusSection()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var directorShelfSection: some View {
+        if let shelf = viewModel.directorShelf, !shelf.items.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("More from \(shelf.name)")
+                    .font(.headline)
+                ScrollView(.horizontal) {
+                    LazyHStack(spacing: 30) {
+                        ForEach(shelf.items) { item in
+                            NavigationLink(value: item) {
+                                MediaCard(item: item)
+                            }
+                            .buttonStyle(.focusableCard)
+                        }
+                    }
+                    .padding(.horizontal, 4)
+                }
+                .focusSection()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var leadActorShelfSection: some View {
+        if let shelf = viewModel.leadActorShelf, !shelf.items.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("More with \(shelf.name)")
+                    .font(.headline)
+                ScrollView(.horizontal) {
+                    LazyHStack(spacing: 30) {
+                        ForEach(shelf.items) { item in
                             NavigationLink(value: item) {
                                 MediaCard(item: item)
                             }
