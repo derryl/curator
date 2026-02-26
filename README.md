@@ -6,6 +6,10 @@ Curator connects to [Overseerr](https://overseerr.dev/) for media requests and a
 
 ![Home Screen — Trending shelves with poster art and ratings](screenshots/home.jpg)
 
+### Why make this app?
+
+[@arvinsingla](https://github.com/arvinsingla) made [an Overseerr app](https://www.reddit.com/r/Overseerr/comments/1g8ops8/my_third_party_appletv_app_overseerrtv_is_out/) for Apple TV and it works great! ([source](https://github.com/arvinsingla/seerr-tv)) I use it all the time. However I'm not a big fan of Overseerr's out-of-the-box TMDB recommendations. They're heavily biased toward generic "trending" content and it's diffuclt to find anything good. I wanted a better browsing experience – something that mixed "trending" with "deep cuts" and overall felt a lot more personalized. This app is the result.
+
 ## Highlights
 
 - **Personalized home screen** — "Because you watched..." recommendations, trending, popular, most anticipated, most watched this week, top rated, and hidden gems — all in horizontally-scrollable shelves
