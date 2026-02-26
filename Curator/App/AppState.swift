@@ -70,11 +70,16 @@ final class AppState {
             if !accessToken.isEmpty {
                 try? KeychainHelper.save(accessToken, for: .traktAccessToken)
                 try? KeychainHelper.save(refreshToken, for: .traktRefreshToken)
-                self.isTraktConnected = true
-                UserDefaults.standard.set(true, for: .traktIsConnected)
             }
         }
         #endif
+
+        // Sync isTraktConnected with Keychain state — Keychain persists across
+        // reinstalls while UserDefaults does not, so the flag can drift.
+        if traktAuth.isAuthenticated && !isTraktConnected {
+            self.isTraktConnected = true
+            UserDefaults.standard.set(true, for: .traktIsConnected)
+        }
 
         if isTraktConnected {
             self.traktClient = TraktClient(authManager: traktAuth)
