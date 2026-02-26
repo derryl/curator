@@ -1,45 +1,85 @@
 import AVKit
 import SwiftUI
 
+// MARK: - Stream Result
+
 struct StreamResult: Sendable {
     let videoURL: URL
     let audioURL: URL? // nil for combined progressive streams
+    let qualityLabel: String // e.g. "1080p", "720p", "HLS"
+}
+
+// MARK: - Trailer Error
+
+enum TrailerError: Error, Sendable {
+    case ageRestricted
+    case videoUnavailable(reason: String)
+    case allStreamsBroken
+    case networkError
+    case compositionFailed
+    case playbackTimeout
+
+    var userMessage: String {
+        switch self {
+        case .ageRestricted:
+            return "This trailer is age-restricted and cannot be played in-app."
+        case .videoUnavailable(let reason):
+            return "Trailer unavailable: \(reason)"
+        case .allStreamsBroken:
+            return "Could not load trailer — all stream URLs were inaccessible."
+        case .networkError:
+            return "Network error — check your connection and try again."
+        case .compositionFailed:
+            return "Failed to prepare trailer for playback."
+        case .playbackTimeout:
+            return "Trailer took too long to start. The stream may be temporarily unavailable."
+        }
+    }
 }
 
 // MARK: - Trailer Player
 
-/// Presents trailers by extracting YouTube streams and launching AVPlayerViewController
-/// directly via UIKit. This avoids the double-BACK issue caused by wrapping
-/// AVPlayerViewController inside SwiftUI's .fullScreenCover.
 @Observable
 @MainActor
 final class TrailerPlayer {
     var isLoading = false
+    var error: TrailerError?
+
+    private var activePlayerVC: AVPlayerViewController?
+    private var activePlayer: AVPlayer?
 
     func play(videoKey: String) {
         guard !isLoading else { return }
         isLoading = true
+        error = nil
 
         Task {
-            let result = await YouTubeStreamExtractor.streamResult(for: videoKey)
+            do {
+                let result = try await YouTubeStreamExtractor.extractStream(for: videoKey)
 
-            guard let result else {
+                let playerItem: AVPlayerItem
+                if let audioURL = result.audioURL {
+                    playerItem = try await Self.composePlayerItem(
+                        videoURL: result.videoURL, audioURL: audioURL
+                    )
+                } else {
+                    playerItem = AVPlayerItem(url: result.videoURL)
+                }
+
                 isLoading = false
-                Self.openExternally(videoKey: videoKey)
-                return
+                presentPlayer(playerItem: playerItem, videoKey: videoKey)
+            } catch let trailerError as TrailerError {
+                isLoading = false
+                error = trailerError
+            } catch {
+                isLoading = false
+                self.error = .networkError
             }
-
-            let playerItem: AVPlayerItem
-            if let audioURL = result.audioURL {
-                playerItem = await Self.composePlayerItem(videoURL: result.videoURL, audioURL: audioURL)
-                    ?? AVPlayerItem(url: result.videoURL)
-            } else {
-                playerItem = AVPlayerItem(url: result.videoURL)
-            }
-
-            isLoading = false
-            presentPlayer(playerItem: playerItem, videoKey: videoKey)
         }
+    }
+
+    func dismissError() {
+        error = nil
     }
 
     // MARK: UIKit Presentation
@@ -49,91 +89,113 @@ final class TrailerPlayer {
         let playerVC = AVPlayerViewController()
         playerVC.player = player
         playerVC.modalPresentationStyle = .fullScreen
+        playerVC.allowsPictureInPicturePlayback = false
 
         guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
               let rootVC = scene.windows.first?.rootViewController else { return }
         var topVC = rootVC
         while let presented = topVC.presentedViewController { topVC = presented }
 
+        activePlayer = player
+        activePlayerVC = playerVC
+
         topVC.present(playerVC, animated: true) {
             player.play()
         }
 
-        // Monitor for playback errors — dismiss and open externally if the URL is broken
-        Task { await monitorPlayback(player: player, playerVC: playerVC, videoKey: videoKey) }
+        Task { await monitorPlayback(player: player, playerVC: playerVC) }
     }
 
-    private func monitorPlayback(player: AVPlayer, playerVC: AVPlayerViewController, videoKey: String) async {
-        for _ in 0..<30 { // Poll for up to 15 seconds
+    private func monitorPlayback(player: AVPlayer, playerVC: AVPlayerViewController) async {
+        // Use structured polling with a shorter total timeout (10s) and check for
+        // the specific failure condition vs. legitimate buffering
+        let maxAttempts = 20 // 10 seconds total
+        for attempt in 0..<maxAttempts {
             try? await Task.sleep(for: .milliseconds(500))
 
-            // Stop monitoring if the player was already dismissed
-            guard playerVC.presentingViewController != nil else { return }
-
-            if player.currentItem?.status == .failed {
-                playerVC.dismiss(animated: true) {
-                    Self.openExternally(videoKey: videoKey)
-                }
+            // Player was dismissed by user — stop monitoring
+            guard playerVC.presentingViewController != nil else {
+                cleanup()
                 return
             }
 
-            // Player started successfully — stop monitoring
+            // Hard failure from AVPlayer
+            if let error = player.currentItem?.error {
+                let nsError = error as NSError
+                let reason = nsError.localizedFailureReason ?? nsError.localizedDescription
+                playerVC.dismiss(animated: true)
+                cleanup()
+                self.error = .videoUnavailable(reason: reason)
+                return
+            }
+
+            // Successfully playing — stop monitoring
             if player.timeControlStatus == .playing {
+                cleanup()
                 return
+            }
+
+            // If the player item loaded successfully and is just buffering, give it more time
+            if player.currentItem?.status == .readyToPlay && attempt < maxAttempts - 1 {
+                continue
             }
         }
 
-        // Timeout: if still not playing after 15 seconds, assume failure
-        guard playerVC.presentingViewController != nil else { return }
-        if player.timeControlStatus != .playing {
-            playerVC.dismiss(animated: true) {
-                Self.openExternally(videoKey: videoKey)
-            }
+        // Timeout — only dismiss if still not playing
+        guard playerVC.presentingViewController != nil,
+              player.timeControlStatus != .playing else {
+            cleanup()
+            return
         }
+        playerVC.dismiss(animated: true)
+        cleanup()
+        error = .playbackTimeout
+    }
+
+    private func cleanup() {
+        activePlayer = nil
+        activePlayerVC = nil
     }
 
     // MARK: Composition
 
-    private static func composePlayerItem(videoURL: URL, audioURL: URL) async -> AVPlayerItem? {
+    private static func composePlayerItem(videoURL: URL, audioURL: URL) async throws -> AVPlayerItem {
         let videoAsset = AVURLAsset(url: videoURL)
         let audioAsset = AVURLAsset(url: audioURL)
 
-        do {
-            let videoTracks = try await videoAsset.load(.tracks)
-            let audioTracks = try await audioAsset.load(.tracks)
-            let videoDuration = try await videoAsset.load(.duration)
+        let videoTracks = try await videoAsset.load(.tracks)
+        let audioTracks = try await audioAsset.load(.tracks)
+        let videoDuration = try await videoAsset.load(.duration)
 
-            let composition = AVMutableComposition()
-
-            if let videoTrack = videoTracks.first(where: { $0.mediaType == .video }) {
-                let compositionVideoTrack = composition.addMutableTrack(
-                    withMediaType: .video,
-                    preferredTrackID: kCMPersistentTrackID_Invalid
-                )
-                try compositionVideoTrack?.insertTimeRange(
-                    CMTimeRange(start: .zero, duration: videoDuration),
-                    of: videoTrack,
-                    at: .zero
-                )
-            }
-
-            if let audioTrack = audioTracks.first(where: { $0.mediaType == .audio }) {
-                let compositionAudioTrack = composition.addMutableTrack(
-                    withMediaType: .audio,
-                    preferredTrackID: kCMPersistentTrackID_Invalid
-                )
-                try compositionAudioTrack?.insertTimeRange(
-                    CMTimeRange(start: .zero, duration: videoDuration),
-                    of: audioTrack,
-                    at: .zero
-                )
-            }
-
-            return AVPlayerItem(asset: composition)
-        } catch {
-            // Composition failed — fall back to video-only
-            return AVPlayerItem(url: videoURL)
+        guard let videoTrack = videoTracks.first(where: { $0.mediaType == .video }) else {
+            throw TrailerError.compositionFailed
         }
+
+        let composition = AVMutableComposition()
+
+        let compositionVideoTrack = composition.addMutableTrack(
+            withMediaType: .video,
+            preferredTrackID: kCMPersistentTrackID_Invalid
+        )
+        try compositionVideoTrack?.insertTimeRange(
+            CMTimeRange(start: .zero, duration: videoDuration),
+            of: videoTrack,
+            at: .zero
+        )
+
+        if let audioTrack = audioTracks.first(where: { $0.mediaType == .audio }) {
+            let compositionAudioTrack = composition.addMutableTrack(
+                withMediaType: .audio,
+                preferredTrackID: kCMPersistentTrackID_Invalid
+            )
+            try compositionAudioTrack?.insertTimeRange(
+                CMTimeRange(start: .zero, duration: videoDuration),
+                of: audioTrack,
+                at: .zero
+            )
+        }
+
+        return AVPlayerItem(asset: composition)
     }
 
     // MARK: External Fallback
@@ -153,77 +215,114 @@ final class TrailerPlayer {
 
 enum YouTubeStreamExtractor {
 
-    /// Returns a stream result for the given video, preferring highest quality.
-    /// Validates adaptive URLs before returning them; falls back to progressive if broken.
-    static func streamResult(for videoID: String, session: URLSession = .shared) async -> StreamResult? {
-        // Strategy 1: Innertube API with ANDROID client
-        if let result = await extractViaInnertube(
+    // MARK: - Public API
+
+    /// Extracts the best playable stream for a YouTube video.
+    /// Throws `TrailerError` with a specific reason on failure.
+    static func extractStream(
+        for videoID: String,
+        session: URLSession = .shared
+    ) async throws -> StreamResult {
+        // Strategy 1: Innertube ANDROID client (best quality, most formats)
+        let androidResult = await extractViaInnertube(
             videoID: videoID,
-            clientBody: [
-                "context": [
-                    "client": [
-                        "clientName": "ANDROID",
-                        "clientVersion": "19.09.37",
-                        "androidSdkVersion": 34,
-                        "hl": "en",
-                        "gl": "US",
-                    ] as [String: Any],
-                ] as [String: Any],
-            ],
-            headers: [
-                "User-Agent": "com.google.android.youtube/19.09.37 (Linux; U; Android 14) gzip",
-            ],
+            clientBody: Self.androidClientBody,
+            headers: ["User-Agent": Self.androidUserAgent],
             session: session
-        ) {
-            return result
+        )
+        switch androidResult {
+        case .success(let result): return result
+        case .failure: break // try embedded/HTML next
         }
 
-        // Strategy 2: Innertube embedded player (works for embeddable videos
-        // that may require auth with the ANDROID client)
-        if let result = await extractViaInnertube(
+        // Strategy 2: Innertube embedded player (works for age-restricted embeddable videos)
+        let embeddedResult = await extractViaInnertube(
             videoID: videoID,
-            clientBody: [
-                "context": [
-                    "client": [
-                        "clientName": "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
-                        "clientVersion": "2.0",
-                        "hl": "en",
-                        "gl": "US",
-                    ] as [String: Any],
-                    "thirdParty": [
-                        "embedUrl": "https://www.youtube.com/",
-                    ] as [String: Any],
-                ] as [String: Any],
-            ],
+            clientBody: Self.embeddedClientBody,
             headers: [:],
             session: session
-        ) {
-            return result
+        )
+        switch embeddedResult {
+        case .success(let result): return result
+        case .failure: break
         }
 
-        // Strategy 3 (fallback): HTML scraping
+        // Strategy 3: HTML scraping (last resort)
         if let result = await extractViaHTMLScraping(videoID: videoID, session: session) {
             return result
         }
 
-        return nil
+        // Determine the best error to surface
+        if case .failure(let error) = androidResult {
+            throw error
+        }
+        if case .failure(let error) = embeddedResult {
+            throw error
+        }
+        throw TrailerError.allStreamsBroken
     }
 
-    /// Legacy convenience that returns a single URL (for tests and simple cases).
+    /// Legacy convenience that returns a single URL.
     static func streamURL(for videoID: String, session: URLSession = .shared) async -> URL? {
-        await streamResult(for: videoID, session: session)?.videoURL
+        try? await extractStream(for: videoID, session: session).videoURL
     }
 
-    // MARK: – Innertube (shared implementation)
+    // MARK: - Client Configurations
+
+    nonisolated(unsafe) static let androidClientBody: [String: Any] = [
+        "context": [
+            "client": [
+                "clientName": "ANDROID",
+                "clientVersion": "19.09.37",
+                "androidSdkVersion": 34,
+                "hl": "en",
+                "gl": "US",
+            ] as [String: Any],
+        ] as [String: Any],
+    ]
+
+    static let androidUserAgent = "com.google.android.youtube/19.09.37 (Linux; U; Android 14) gzip"
+
+    nonisolated(unsafe) static let embeddedClientBody: [String: Any] = [
+        "context": [
+            "client": [
+                "clientName": "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+                "clientVersion": "2.0",
+                "hl": "en",
+                "gl": "US",
+            ] as [String: Any],
+            "thirdParty": [
+                "embedUrl": "https://www.youtube.com/",
+            ] as [String: Any],
+        ] as [String: Any],
+    ]
+
+    // MARK: - Codec Compatibility
+
+    /// Mime types that tvOS/AVPlayer can decode natively.
+    /// VP9, AV1, and Opus are NOT supported on tvOS.
+    static func isTvOSCompatibleVideo(_ mimeType: String) -> Bool {
+        let dominated = mimeType.lowercased()
+        // H.264 (avc1) and H.265 (hev1/hvc1) in mp4 container
+        return dominated.hasPrefix("video/mp4")
+    }
+
+    static func isTvOSCompatibleAudio(_ mimeType: String) -> Bool {
+        let dominated = mimeType.lowercased()
+        // AAC in mp4 container — reject WebM/Opus
+        return dominated.hasPrefix("audio/mp4")
+    }
+
+    // MARK: – Innertube
 
     private static func extractViaInnertube(
         videoID: String,
         clientBody: [String: Any],
         headers: [String: String],
         session: URLSession
-    ) async -> StreamResult? {
+    ) async -> Result<StreamResult, TrailerError> {
         guard let apiURL = URL(string: "https://www.youtube.com/youtubei/v1/player") else {
-            return nil
+            return .failure(.networkError)
         }
 
         var fullBody = clientBody
@@ -231,7 +330,7 @@ enum YouTubeStreamExtractor {
         fullBody["contentCheckOk"] = true
 
         guard let jsonData = try? JSONSerialization.data(withJSONObject: fullBody) else {
-            return nil
+            return .failure(.networkError)
         }
 
         var request = URLRequest(url: apiURL)
@@ -246,28 +345,35 @@ enum YouTubeStreamExtractor {
         guard let (data, response) = try? await session.data(for: request),
               let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
-            return nil
+            return .failure(.networkError)
         }
 
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return nil
+            return .failure(.networkError)
         }
 
-        // Check playability status — skip if not OK (e.g., LOGIN_REQUIRED, UNPLAYABLE)
+        // Check playability status
         if let playabilityStatus = json["playabilityStatus"] as? [String: Any],
            let status = playabilityStatus["status"] as? String,
            status != "OK" {
-            return nil
+            let reason = playabilityStatus["reason"] as? String ?? status
+            if status == "LOGIN_REQUIRED" {
+                return .failure(.ageRestricted)
+            }
+            return .failure(.videoUnavailable(reason: reason))
         }
 
         guard let streamingData = json["streamingData"] as? [String: Any] else {
-            return nil
+            return .failure(.allStreamsBroken)
         }
 
-        return await selectStream(from: streamingData, session: session)
+        if let result = await selectStream(from: streamingData, session: session) {
+            return .success(result)
+        }
+        return .failure(.allStreamsBroken)
     }
 
-    // MARK: – HTML scraping (fallback)
+    // MARK: – HTML Scraping (fallback)
 
     private static func extractViaHTMLScraping(
         videoID: String,
@@ -292,12 +398,12 @@ enum YouTubeStreamExtractor {
             return nil
         }
 
-        // Sub-strategy A: Regex for HLS manifest URL
+        // Sub-strategy A: HLS manifest URL
         if let url = extractHLSURL(from: html) {
-            return StreamResult(videoURL: url, audioURL: nil)
+            return StreamResult(videoURL: url, audioURL: nil, qualityLabel: "HLS")
         }
 
-        // Sub-strategy B: Parse full ytInitialPlayerResponse JSON
+        // Sub-strategy B: ytInitialPlayerResponse JSON
         if let playerResponse = extractPlayerResponse(from: html),
            let streamingData = playerResponse["streamingData"] as? [String: Any],
            let result = await selectStream(from: streamingData, session: session) {
@@ -307,7 +413,7 @@ enum YouTubeStreamExtractor {
         return nil
     }
 
-    // MARK: – Regex extraction
+    // MARK: – Regex Extraction
 
     private static func extractHLSURL(from html: String) -> URL? {
         let pattern = #""hlsManifestUrl"\s*:\s*"(https://manifest\.googlevideo\.com/[^"]+)""#
@@ -324,7 +430,7 @@ enum YouTubeStreamExtractor {
         return URL(string: urlString)
     }
 
-    // MARK: – JSON parsing
+    // MARK: – JSON Parsing
 
     private static func extractPlayerResponse(from html: String) -> [String: Any]? {
         guard let markerRange = html.range(of: "ytInitialPlayerResponse") else { return nil }
@@ -354,50 +460,93 @@ enum YouTubeStreamExtractor {
         return json
     }
 
-    // MARK: – Stream selection
+    // MARK: – Stream Selection
 
-    /// Selects the best stream, validating adaptive URLs before returning them.
-    /// Falls back to progressive formats if adaptive URLs are broken (e.g., 403).
-    private static func selectStream(from streamingData: [String: Any], session: URLSession) async -> StreamResult? {
-        // Prefer HLS manifest (live streams)
+    /// Selects the best tvOS-compatible stream with cascading quality fallback.
+    /// Validates both video and audio URLs. Falls back through adaptive resolutions
+    /// before dropping to progressive formats.
+    static func selectStream(
+        from streamingData: [String: Any],
+        session: URLSession
+    ) async -> StreamResult? {
+        // Prefer HLS manifest (live streams — AVPlayer handles quality adaptively)
         if let hls = streamingData["hlsManifestUrl"] as? String, let url = URL(string: hls) {
-            return StreamResult(videoURL: url, audioURL: nil)
+            return StreamResult(videoURL: url, audioURL: nil, qualityLabel: "HLS")
         }
 
-        // Try adaptive formats (highest quality, separate video + audio)
+        // Try adaptive formats with cascading quality and codec filtering
         if let adaptiveFormats = streamingData["adaptiveFormats"] as? [[String: Any]] {
+            // Filter to tvOS-compatible codecs only
             let videoFormats = adaptiveFormats.filter {
                 $0["url"] is String &&
-                ($0["mimeType"] as? String)?.hasPrefix("video/") == true
+                isTvOSCompatibleVideo($0["mimeType"] as? String ?? "")
             }
             let audioFormats = adaptiveFormats.filter {
                 $0["url"] is String &&
-                ($0["mimeType"] as? String)?.hasPrefix("audio/") == true
+                isTvOSCompatibleAudio($0["mimeType"] as? String ?? "")
             }
 
-            let bestVideo = videoFormats
-                .max { ($0["height"] as? Int ?? 0) < ($1["height"] as? Int ?? 0) }
+            // Sort video by height descending for cascading fallback
+            let sortedVideos = videoFormats.sorted {
+                ($0["height"] as? Int ?? 0) > ($1["height"] as? Int ?? 0)
+            }
+
+            // Best compatible audio (highest bitrate AAC)
             let bestAudio = audioFormats
                 .max { ($0["bitrate"] as? Int ?? 0) < ($1["bitrate"] as? Int ?? 0) }
 
-            if let videoURLStr = bestVideo?["url"] as? String,
-               let videoURL = URL(string: videoURLStr),
-               let audioURLStr = bestAudio?["url"] as? String,
-               let audioURL = URL(string: audioURLStr) {
-                // Validate the adaptive video URL is accessible before using it
-                if await validateStreamURL(videoURL, session: session) {
-                    return StreamResult(videoURL: videoURL, audioURL: audioURL)
+            // Cascade through video resolutions: try 1080p, then 720p, etc.
+            for videoFormat in sortedVideos {
+                guard let videoURLStr = videoFormat["url"] as? String,
+                      let videoURL = URL(string: videoURLStr) else { continue }
+
+                let height = videoFormat["height"] as? Int ?? 0
+
+                // Validate the video URL is accessible
+                guard await validateStreamURL(videoURL, session: session) else { continue }
+
+                // If we have a compatible audio stream, validate it too
+                if let audioURLStr = bestAudio?["url"] as? String,
+                   let audioURL = URL(string: audioURLStr) {
+                    if await validateStreamURL(audioURL, session: session) {
+                        return StreamResult(
+                            videoURL: videoURL,
+                            audioURL: audioURL,
+                            qualityLabel: "\(height)p"
+                        )
+                    }
+                    // Audio broken — return video-only adaptive (still higher quality than progressive)
+                    return StreamResult(
+                        videoURL: videoURL,
+                        audioURL: nil,
+                        qualityLabel: "\(height)p (no audio)"
+                    )
                 }
+
+                // No compatible audio formats at all — return video-only
+                return StreamResult(
+                    videoURL: videoURL,
+                    audioURL: nil,
+                    qualityLabel: "\(height)p (no audio)"
+                )
             }
         }
 
         // Fall back to progressive formats (combined video + audio, max ~720p)
         if let formats = streamingData["formats"] as? [[String: Any]] {
-            let best = formats
-                .filter { $0["url"] is String }
+            let compatibleFormats = formats.filter {
+                $0["url"] is String &&
+                isTvOSCompatibleVideo($0["mimeType"] as? String ?? "")
+            }
+            let best = compatibleFormats
                 .max { ($0["height"] as? Int ?? 0) < ($1["height"] as? Int ?? 0) }
             if let urlStr = best?["url"] as? String, let url = URL(string: urlStr) {
-                return StreamResult(videoURL: url, audioURL: nil)
+                let height = best?["height"] as? Int ?? 0
+                return StreamResult(
+                    videoURL: url,
+                    audioURL: nil,
+                    qualityLabel: "\(height)p"
+                )
             }
         }
 
@@ -405,7 +554,7 @@ enum YouTubeStreamExtractor {
     }
 
     /// Sends a HEAD request to check if a stream URL is accessible (not 403/blocked).
-    private static func validateStreamURL(_ url: URL, session: URLSession) async -> Bool {
+    static func validateStreamURL(_ url: URL, session: URLSession) async -> Bool {
         var request = URLRequest(url: url)
         request.httpMethod = "HEAD"
         request.timeoutInterval = 5

@@ -59,6 +59,21 @@ struct MovieDetailView: View {
                 }
             }
         }
+        .alert("Trailer Error", isPresented: trailerErrorBinding) {
+            if let key = trailerKey {
+                Button("Open in YouTube") {
+                    TrailerPlayer.openExternally(videoKey: key)
+                    trailerPlayer.dismissError()
+                }
+            }
+            Button("OK", role: .cancel) {
+                trailerPlayer.dismissError()
+            }
+        } message: {
+            if let error = trailerPlayer.error {
+                Text(error.userMessage)
+            }
+        }
     }
 
     // MARK: - Hero
@@ -264,6 +279,13 @@ struct MovieDetailView: View {
 
     private func openTrailer(key: String) {
         trailerPlayer.play(videoKey: key)
+    }
+
+    private var trailerErrorBinding: Binding<Bool> {
+        Binding(
+            get: { trailerPlayer.error != nil },
+            set: { if !$0 { trailerPlayer.dismissError() } }
+        )
     }
 }
 

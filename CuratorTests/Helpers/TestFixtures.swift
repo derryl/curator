@@ -371,4 +371,96 @@ enum TestFixtures {
         """
         return html.data(using: .utf8)!
     }()
+
+    // MARK: - Codec Filtering Fixtures
+
+    /// Response where the highest-quality adaptive video is VP9 (incompatible with tvOS).
+    /// The extractor should skip VP9 and select the next-best mp4 format.
+    static let youtubeInnertubeWithVP9JSON: Data = {
+        let json: [String: Any] = [
+            "streamingData": [
+                "adaptiveFormats": [
+                    [
+                        "itag": 271,
+                        "url": "https://rr1---sn-example.googlevideo.com/videoplayback?id=abc123&itag=271",
+                        "mimeType": "video/webm; codecs=\"vp9\"",
+                        "width": 2560,
+                        "height": 1440,
+                        "bitrate": 8000000,
+                        "quality": "hd1440",
+                    ] as [String: Any],
+                    [
+                        "itag": 136,
+                        "url": "https://rr1---sn-example.googlevideo.com/videoplayback?id=abc123&itag=136",
+                        "mimeType": "video/mp4; codecs=\"avc1.4d401f\"",
+                        "width": 1280,
+                        "height": 720,
+                        "bitrate": 2500000,
+                        "quality": "hd720",
+                    ] as [String: Any],
+                    [
+                        "itag": 140,
+                        "url": "https://rr1---sn-example.googlevideo.com/videoplayback?id=abc123&itag=140",
+                        "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"",
+                        "bitrate": 128000,
+                        "audioQuality": "AUDIO_QUALITY_MEDIUM",
+                    ] as [String: Any],
+                ],
+                "formats": [
+                    [
+                        "itag": 18,
+                        "url": "https://rr1---sn-example.googlevideo.com/videoplayback?id=abc123&itag=18",
+                        "mimeType": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+                        "width": 640,
+                        "height": 360,
+                        "quality": "medium",
+                    ] as [String: Any],
+                ],
+            ] as [String: Any],
+            "videoDetails": [
+                "videoId": "test",
+                "title": "VP9 Test Video",
+            ] as [String: Any],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json)
+    }()
+
+    /// Response where the only audio format is Opus/WebM (incompatible with tvOS AVPlayer).
+    /// The extractor should return video-only since no compatible audio is available.
+    static let youtubeInnertubeOpusOnlyAudioJSON: Data = {
+        let json: [String: Any] = [
+            "streamingData": [
+                "adaptiveFormats": [
+                    [
+                        "itag": 137,
+                        "url": "https://rr1---sn-example.googlevideo.com/videoplayback?id=abc123&itag=137",
+                        "mimeType": "video/mp4; codecs=\"avc1.640028\"",
+                        "width": 1920,
+                        "height": 1080,
+                        "bitrate": 4000000,
+                        "quality": "hd1080",
+                    ] as [String: Any],
+                    [
+                        "itag": 249,
+                        "url": "https://rr1---sn-example.googlevideo.com/videoplayback?id=abc123&itag=249",
+                        "mimeType": "audio/webm; codecs=\"opus\"",
+                        "bitrate": 50000,
+                        "audioQuality": "AUDIO_QUALITY_LOW",
+                    ] as [String: Any],
+                    [
+                        "itag": 250,
+                        "url": "https://rr1---sn-example.googlevideo.com/videoplayback?id=abc123&itag=250",
+                        "mimeType": "audio/webm; codecs=\"opus\"",
+                        "bitrate": 70000,
+                        "audioQuality": "AUDIO_QUALITY_LOW",
+                    ] as [String: Any],
+                ],
+            ] as [String: Any],
+            "videoDetails": [
+                "videoId": "test",
+                "title": "Opus Only Audio Test",
+            ] as [String: Any],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json)
+    }()
 }
