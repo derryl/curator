@@ -16,13 +16,14 @@ struct OverseerrTvDetails: Sendable {
     let credits: OverseerrCredits?
     let seasons: [OverseerrSeason]?
     let relatedVideos: [OverseerrVideo]?
+    let keywords: [OverseerrKeyword]
 }
 
 extension OverseerrTvDetails: Codable {
     enum CodingKeys: String, CodingKey {
         case id, name, originalName, overview, posterPath, backdropPath
         case voteAverage, firstAirDate, numberOfSeasons, numberOfEpisodes
-        case genres, mediaInfo, credits, seasons, relatedVideos
+        case genres, mediaInfo, credits, seasons, relatedVideos, keywords
     }
 
     init(from decoder: Decoder) throws {
@@ -46,6 +47,34 @@ extension OverseerrTvDetails: Codable {
         } catch {
             relatedVideos = nil
         }
+        // TMDB nests keywords as { keywords: { results: [...] } } for TV
+        do {
+            let wrapper = try container.decodeIfPresent(OverseerrKeywordsWrapper.self, forKey: .keywords)
+            keywords = wrapper?.allKeywords ?? []
+        } catch {
+            keywords = []
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(name, forKey: .name)
+        try container.encodeIfPresent(originalName, forKey: .originalName)
+        try container.encodeIfPresent(overview, forKey: .overview)
+        try container.encodeIfPresent(posterPath, forKey: .posterPath)
+        try container.encodeIfPresent(backdropPath, forKey: .backdropPath)
+        try container.encodeIfPresent(voteAverage, forKey: .voteAverage)
+        try container.encodeIfPresent(firstAirDate, forKey: .firstAirDate)
+        try container.encodeIfPresent(numberOfSeasons, forKey: .numberOfSeasons)
+        try container.encodeIfPresent(numberOfEpisodes, forKey: .numberOfEpisodes)
+        try container.encodeIfPresent(genres, forKey: .genres)
+        try container.encodeIfPresent(mediaInfo, forKey: .mediaInfo)
+        try container.encodeIfPresent(credits, forKey: .credits)
+        try container.encodeIfPresent(seasons, forKey: .seasons)
+        try container.encodeIfPresent(relatedVideos, forKey: .relatedVideos)
+        let wrapper = OverseerrKeywordsWrapper(keywords: nil, results: keywords)
+        try container.encode(wrapper, forKey: .keywords)
     }
 }
 

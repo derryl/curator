@@ -42,6 +42,13 @@ struct GenreListView: View {
             .navigationDestination(for: PersonDestination.self) { person in
                 PersonDetailView(person: person)
             }
+            .navigationDestination(for: KeywordDestination.self) { keyword in
+                KeywordResultsView(
+                    keywordId: keyword.id,
+                    keywordName: keyword.name,
+                    mediaType: keyword.mediaType
+                )
+            }
             .task {
                 if viewModel.movieGenres.isEmpty {
                     loadGenres()

@@ -83,6 +83,10 @@
 		5BF0B45C99A0F6D6D917CB2F /* PersonShelfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D45C7628163A017B9BE9BE /* PersonShelfTests.swift */; };
 		C4B91E5F073DA28A1E6F4D83 /* TraktModelsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E3F01D82C4B59E6D1A30F2 /* TraktModelsTests.swift */; };
 		E5C0D38A46F1B72E9DA05C16 /* HiddenGemsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8F2A64B19E7C3D50B82E1A7 /* HiddenGemsTests.swift */; };
+		6F2EAFE9FCD9B0634B1CE8C5 /* OverseerrKeyword.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A4A9972DC4C8CCD20956C0 /* OverseerrKeyword.swift */; };
+		2A72A953B3CB72D87E126F18 /* KeywordBrowseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2522435DDCBD4CE99DBA026 /* KeywordBrowseViewModel.swift */; };
+		BB5D338788AF83C7155AE264 /* KeywordResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8C95BBC59228C271963EF7F /* KeywordResultsView.swift */; };
+		A1B2C3D4E5F6789012345602 /* KeywordDiscoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012345601 /* KeywordDiscoveryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -183,6 +187,10 @@
 		A1D45C7628163A017B9BE9BE /* PersonShelfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonShelfTests.swift; sourceTree = "<group>"; };
 		A7E3F01D82C4B59E6D1A30F2 /* TraktModelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraktModelsTests.swift; sourceTree = "<group>"; };
 		D8F2A64B19E7C3D50B82E1A7 /* HiddenGemsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiddenGemsTests.swift; sourceTree = "<group>"; };
+		F2A4A9972DC4C8CCD20956C0 /* OverseerrKeyword.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverseerrKeyword.swift; sourceTree = "<group>"; };
+		C2522435DDCBD4CE99DBA026 /* KeywordBrowseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeywordBrowseViewModel.swift; sourceTree = "<group>"; };
+		D8C95BBC59228C271963EF7F /* KeywordResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeywordResultsView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6789012345601 /* KeywordDiscoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeywordDiscoveryTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -238,6 +246,7 @@
 		176D9986735BD18393FE5F0E /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				C2522435DDCBD4CE99DBA026 /* KeywordBrowseViewModel.swift */,
 				EF82CC29380294C372974DD1 /* DetailViewModel.swift */,
 				5B0AFFFBD2AEDFE6F06561F5 /* GenreBrowseViewModel.swift */,
 				D4AD789E3DDFE1192505A472 /* HomeViewModel.swift */,
@@ -251,6 +260,7 @@
 		1E571D7F62C7F177AB143642 /* Overseerr */ = {
 			isa = PBXGroup;
 			children = (
+				F2A4A9972DC4C8CCD20956C0 /* OverseerrKeyword.swift */,
 				4A8B5D1090B5559CDD61F5BE /* OverseerrGenreSliderItem.swift */,
 				E413288D1CCA4F457D1D2160 /* OverseerrMediaInfo.swift */,
 				E920ABB81BB89E853D65AC58 /* OverseerrMediaRequest.swift */,
@@ -275,6 +285,7 @@
 		46D8CDE48CCE2FB6D6D3C0E8 /* Browse */ = {
 			isa = PBXGroup;
 			children = (
+				D8C95BBC59228C271963EF7F /* KeywordResultsView.swift */,
 				9CDABC950A4EB2A4C3D0AB93 /* GenreListView.swift */,
 				A56C521E04F2EFBAA2375878 /* GenreResultsView.swift */,
 			);
@@ -376,6 +387,7 @@
 				A1D45C7628163A017B9BE9BE /* PersonShelfTests.swift */,
 				A7E3F01D82C4B59E6D1A30F2 /* TraktModelsTests.swift */,
 				D8F2A64B19E7C3D50B82E1A7 /* HiddenGemsTests.swift */,
+				A1B2C3D4E5F6789012345601 /* KeywordDiscoveryTests.swift */,
 			);
 			path = CuratorTests;
 			sourceTree = "<group>";
@@ -621,6 +633,9 @@
 				35AFF97193B99C3CEFE5BA84 /* TraktToken.swift in Sources */,
 				DB73F9994B85AC7000AF4231 /* UserDefaultsKeys.swift in Sources */,
 				9846E1118B79F32205DC18D6 /* YouTubePlayerView.swift in Sources */,
+				6F2EAFE9FCD9B0634B1CE8C5 /* OverseerrKeyword.swift in Sources */,
+				2A72A953B3CB72D87E126F18 /* KeywordBrowseViewModel.swift in Sources */,
+				BB5D338788AF83C7155AE264 /* KeywordResultsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -641,6 +656,7 @@
 				5BF0B45C99A0F6D6D917CB2F /* PersonShelfTests.swift in Sources */,
 				C4B91E5F073DA28A1E6F4D83 /* TraktModelsTests.swift in Sources */,
 				E5C0D38A46F1B72E9DA05C16 /* HiddenGemsTests.swift in Sources */,
+				A1B2C3D4E5F6789012345602 /* KeywordDiscoveryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

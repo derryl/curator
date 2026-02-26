@@ -14,13 +14,14 @@ struct OverseerrMovieDetails: Sendable {
     let mediaInfo: OverseerrMediaInfo?
     let credits: OverseerrCredits?
     let relatedVideos: [OverseerrVideo]?
+    let keywords: [OverseerrKeyword]
 }
 
 extension OverseerrMovieDetails: Codable {
     enum CodingKeys: String, CodingKey {
         case id, title, originalTitle, overview, posterPath, backdropPath
         case voteAverage, releaseDate, runtime, genres, mediaInfo, credits
-        case relatedVideos
+        case relatedVideos, keywords
     }
 
     init(from decoder: Decoder) throws {
@@ -37,12 +38,37 @@ extension OverseerrMovieDetails: Codable {
         genres = try container.decodeIfPresent([OverseerrGenre].self, forKey: .genres)
         mediaInfo = try container.decodeIfPresent(OverseerrMediaInfo.self, forKey: .mediaInfo)
         credits = try container.decodeIfPresent(OverseerrCredits.self, forKey: .credits)
-        // Decode relatedVideos with do/catch so a format mismatch doesn't fail the entire response
         do {
             relatedVideos = try container.decodeIfPresent([OverseerrVideo].self, forKey: .relatedVideos)
         } catch {
             relatedVideos = nil
         }
+        // TMDB nests keywords as { keywords: { keywords: [...] } } for movies
+        do {
+            let wrapper = try container.decodeIfPresent(OverseerrKeywordsWrapper.self, forKey: .keywords)
+            keywords = wrapper?.allKeywords ?? []
+        } catch {
+            keywords = []
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(title, forKey: .title)
+        try container.encodeIfPresent(originalTitle, forKey: .originalTitle)
+        try container.encodeIfPresent(overview, forKey: .overview)
+        try container.encodeIfPresent(posterPath, forKey: .posterPath)
+        try container.encodeIfPresent(backdropPath, forKey: .backdropPath)
+        try container.encodeIfPresent(voteAverage, forKey: .voteAverage)
+        try container.encodeIfPresent(releaseDate, forKey: .releaseDate)
+        try container.encodeIfPresent(runtime, forKey: .runtime)
+        try container.encodeIfPresent(genres, forKey: .genres)
+        try container.encodeIfPresent(mediaInfo, forKey: .mediaInfo)
+        try container.encodeIfPresent(credits, forKey: .credits)
+        try container.encodeIfPresent(relatedVideos, forKey: .relatedVideos)
+        let wrapper = OverseerrKeywordsWrapper(keywords: keywords, results: nil)
+        try container.encode(wrapper, forKey: .keywords)
     }
 }
 

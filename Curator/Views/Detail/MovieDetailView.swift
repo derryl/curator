@@ -37,6 +37,7 @@ struct MovieDetailView: View {
 
                 VStack(alignment: .leading, spacing: 40) {
                     overviewSection
+                    keywordTagsSection
                     castSection
                     youMightLikeSection
                     directorShelfSection
@@ -172,6 +173,37 @@ struct MovieDetailView: View {
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .focusable()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var keywordTagsSection: some View {
+        let keywords = viewModel.movieDetails?.keywords ?? []
+        if !keywords.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Tags")
+                    .font(.headline)
+                ScrollView(.horizontal) {
+                    LazyHStack(spacing: 12) {
+                        ForEach(keywords) { keyword in
+                            NavigationLink(value: KeywordDestination(
+                                id: keyword.id,
+                                name: keyword.name,
+                                mediaType: .movie
+                            )) {
+                                Text(keyword.name)
+                                    .font(.callout)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(.quaternary, in: Capsule())
+                            }
+                            .buttonStyle(.focusableCard)
+                        }
+                    }
+                    .padding(.horizontal, 4)
+                }
+                .focusSection()
             }
         }
     }

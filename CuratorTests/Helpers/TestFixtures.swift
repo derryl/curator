@@ -325,6 +325,96 @@ enum TestFixtures {
         return try! JSONSerialization.data(withJSONObject: json)
     }()
 
+    // MARK: - Movie Details with Keywords JSON
+
+    static let movieDetailsWithKeywordsJSON: Data = {
+        let json: [String: Any] = [
+            "id": 550,
+            "title": "Fight Club",
+            "overview": "An insomniac office worker...",
+            "posterPath": "/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg",
+            "backdropPath": "/hZkgoQYus5dXo3H8T7Uef6DNknx.jpg",
+            "voteAverage": 8.4,
+            "releaseDate": "1999-10-15",
+            "runtime": 139,
+            "genres": [
+                ["id": 18, "name": "Drama"],
+                ["id": 53, "name": "Thriller"],
+            ],
+            "credits": [
+                "cast": [
+                    ["id": 819, "name": "Edward Norton", "character": "The Narrator", "profilePath": "/123.jpg"],
+                ],
+            ],
+            "keywords": [
+                "keywords": [
+                    ["id": 825, "name": "support group"],
+                    ["id": 1541, "name": "fight"],
+                    ["id": 1721, "name": "dual identity"],
+                ],
+            ] as [String: Any],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json)
+    }()
+
+    static let tvDetailsWithKeywordsJSON: Data = {
+        let json: [String: Any] = [
+            "id": 1399,
+            "name": "Breaking Bad",
+            "overview": "A chemistry teacher...",
+            "posterPath": "/ggFHVNu6YYI5L9pCfOacjizRGt.jpg",
+            "backdropPath": "/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg",
+            "voteAverage": 8.9,
+            "firstAirDate": "2008-01-20",
+            "numberOfSeasons": 5,
+            "numberOfEpisodes": 62,
+            "genres": [
+                ["id": 18, "name": "Drama"],
+            ],
+            "seasons": [
+                ["id": 3572, "seasonNumber": 1, "name": "Season 1", "episodeCount": 7, "overview": "S1", "posterPath": "/s1.jpg"],
+            ],
+            "keywords": [
+                "results": [
+                    ["id": 310, "name": "drug dealer"],
+                    ["id": 2231, "name": "cancer"],
+                ],
+            ] as [String: Any],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json)
+    }()
+
+    // MARK: - Keyword Discover Results JSON
+
+    static let keywordDiscoverResultsJSON: Data = {
+        let json: [String: Any] = [
+            "page": 1,
+            "totalPages": 3,
+            "totalResults": 42,
+            "results": [
+                [
+                    "id": 111,
+                    "mediaType": "movie",
+                    "title": "Keyword Movie A",
+                    "posterPath": "/ka.jpg",
+                    "overview": "A movie matching the keyword",
+                    "voteAverage": 7.2,
+                    "genreIds": [18],
+                ] as [String: Any],
+                [
+                    "id": 222,
+                    "mediaType": "movie",
+                    "title": "Keyword Movie B",
+                    "posterPath": "/kb.jpg",
+                    "overview": "Another keyword match",
+                    "voteAverage": 6.8,
+                    "genreIds": [53],
+                ] as [String: Any],
+            ],
+        ]
+        return try! JSONSerialization.data(withJSONObject: json)
+    }()
+
     // MARK: - Error JSON
 
     static func errorJSON(message: String = "Internal Server Error") -> Data {

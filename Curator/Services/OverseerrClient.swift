@@ -74,6 +74,20 @@ actor OverseerrClient {
         return try await get("/discover/tv/genre/\(genreId)", query: params)
     }
 
+    func discoverMoviesByKeyword(keywordId: Int, page: Int = 1) async throws -> OverseerrPagedResponse<OverseerrMediaResult> {
+        try await get("/discover/movies", query: [
+            "page": String(page),
+            "withKeywords": String(keywordId),
+        ])
+    }
+
+    func discoverTvByKeyword(keywordId: Int, page: Int = 1) async throws -> OverseerrPagedResponse<OverseerrMediaResult> {
+        try await get("/discover/tv", query: [
+            "page": String(page),
+            "withKeywords": String(keywordId),
+        ])
+    }
+
     func movieGenreSlider() async throws -> [OverseerrGenreSliderItem] {
         try await get("/discover/genreslider/movie")
     }

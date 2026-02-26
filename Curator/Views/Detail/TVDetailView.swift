@@ -37,6 +37,7 @@ struct TVDetailView: View {
 
                 VStack(alignment: .leading, spacing: 40) {
                     overviewSection
+                    keywordTagsSection
                     seasonsSection
                     castSection
                     youMightLikeSection
@@ -280,6 +281,37 @@ struct TVDetailView: View {
                         ForEach(viewModel.youMightLikeItems) { item in
                             NavigationLink(value: item) {
                                 MediaCard(item: item)
+                            }
+                            .buttonStyle(.focusableCard)
+                        }
+                    }
+                    .padding(.horizontal, 4)
+                }
+                .focusSection()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var keywordTagsSection: some View {
+        let keywords = viewModel.tvDetails?.keywords ?? []
+        if !keywords.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Tags")
+                    .font(.headline)
+                ScrollView(.horizontal) {
+                    LazyHStack(spacing: 12) {
+                        ForEach(keywords) { keyword in
+                            NavigationLink(value: KeywordDestination(
+                                id: keyword.id,
+                                name: keyword.name,
+                                mediaType: .tv
+                            )) {
+                                Text(keyword.name)
+                                    .font(.callout)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(.quaternary, in: Capsule())
                             }
                             .buttonStyle(.focusableCard)
                         }
