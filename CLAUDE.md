@@ -32,7 +32,9 @@ xcodebuild test -project Curator.xcodeproj -scheme CuratorUITests \
 
 ## Secrets Configuration
 
-Credentials live in `Curator/Config/Secrets.xcconfig` (gitignored). Copy from `Secrets.xcconfig.example` and fill in real values. These are read via Info.plist keys at runtime. Never hardcode API keys in source files.
+Credentials live in `Curator/Config/Secrets.xcconfig` (gitignored). Copy from `Secrets.xcconfig.example` and fill in real values.
+
+The pipeline is: `Secrets.xcconfig` → `project.yml configFiles` → Xcode build settings → `Info.plist` `$(VARIABLE)` substitution → `Bundle.main.infoDictionary` at runtime. If any link in this chain breaks (e.g. `configFiles` removed from `project.yml`), all `$(...)` variables in `Info.plist` resolve to empty strings and secrets silently fail to load. When debugging missing secrets, check the built `Info.plist` inside `DerivedData/.../Curator.app/Info.plist` to verify values resolved.
 
 ## Architecture
 
@@ -95,6 +97,7 @@ The `.xcodeproj` is generated from `project.yml`. After adding or removing Swift
 - Bundle ID is lowercase: `com.derryl.curator` (not `com.derryl.Curator`)
 - `print()` doesn't appear in unified log on Apple platforms; use `NSLog` or `os.Logger` for debugging
 - Trakt rate limit: 1000 GET requests per 5 minutes
+- **Keychain persists across app uninstalls on the simulator; UserDefaults does not.** This means auth tokens survive a reinstall but boolean flags like `traktIsConnected` get wiped. `AppState.init` handles this by syncing `isTraktConnected` from Keychain state on startup. Any new feature that stores a "connected" flag in UserDefaults alongside tokens in Keychain must account for this asymmetry — always treat Keychain as the source of truth for auth state.
 
 ## Key Documentation
 
