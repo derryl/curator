@@ -12,6 +12,11 @@ final class HomeViewModel {
     var upcomingShows: [MediaItem] = []
     var topRatedMovies: [MediaItem] = []
     var topRatedShows: [MediaItem] = []
+    var anticipatedMovies: [MediaItem] = []
+    var anticipatedShows: [MediaItem] = []
+    var mostWatchedMovies: [MediaItem] = []
+    var mostWatchedShows: [MediaItem] = []
+    var hiddenGems: [MediaItem] = []
     var recommendationShelves: [RecommendationShelf] = []
     var isLoading = false
     var errorMessage: String?
@@ -48,6 +53,7 @@ final class HomeViewModel {
         }
 
         deriveTopRatedShelves()
+        deriveHiddenGems()
         deduplicateShelves()
         isLoading = false
     }
@@ -66,6 +72,22 @@ final class HomeViewModel {
         topRatedShows = Array(
             allShows
                 .filter { ($0.voteAverage ?? 0) >= 7.5 }
+                .sorted { ($0.voteAverage ?? 0) > ($1.voteAverage ?? 0) }
+                .prefix(15)
+        )
+    }
+
+    /// Surface well-rated items from recommendation shelves that don't appear in mainstream shelves.
+    func deriveHiddenGems() {
+        let mainstreamIds = Set(
+            (trendingMovies + trendingShows + popularMovies + popularShows)
+                .map(\.id)
+        )
+
+        let allRecommended = recommendationShelves.flatMap(\.items)
+        hiddenGems = Array(
+            allRecommended
+                .filter { !mainstreamIds.contains($0.id) && ($0.voteAverage ?? 0) >= 7.0 }
                 .sorted { ($0.voteAverage ?? 0) > ($1.voteAverage ?? 0) }
                 .prefix(15)
         )
@@ -98,6 +120,11 @@ final class HomeViewModel {
         dedup(&upcomingShows)
         dedup(&topRatedMovies)
         dedup(&topRatedShows)
+        dedup(&anticipatedMovies)
+        dedup(&anticipatedShows)
+        dedup(&mostWatchedMovies)
+        dedup(&mostWatchedShows)
+        dedup(&hiddenGems)
     }
 
     // MARK: - Overseerr Fallback
@@ -160,12 +187,18 @@ final class HomeViewModel {
         async let trendingShowsTask = Self.fetchTraktTrendingShows(traktClient: traktClient, mediaResolver: mediaResolver)
         async let popularMoviesTask = Self.fetchTraktPopularMovies(traktClient: traktClient, mediaResolver: mediaResolver)
         async let popularShowsTask = Self.fetchTraktPopularShows(traktClient: traktClient, mediaResolver: mediaResolver)
+        async let anticipatedMoviesTask = Self.fetchTraktAnticipatedMovies(traktClient: traktClient, mediaResolver: mediaResolver)
+        async let anticipatedShowsTask = Self.fetchTraktAnticipatedShows(traktClient: traktClient, mediaResolver: mediaResolver)
+        async let mostWatchedMoviesTask = Self.fetchTraktMostWatchedMovies(traktClient: traktClient, mediaResolver: mediaResolver)
+        async let mostWatchedShowsTask = Self.fetchTraktMostWatchedShows(traktClient: traktClient, mediaResolver: mediaResolver)
         async let couchMoneyTask = Self.fetchCouchMoneyShelves(traktClient: traktClient, mediaResolver: mediaResolver, watchedTmdbIds: watchedIds)
         async let traktMLTask = Self.fetchTraktMLShelves(traktClient: traktClient, mediaResolver: mediaResolver, watchedTmdbIds: watchedIds)
         async let becauseTask = Self.fetchBecauseYouWatchedShelves(traktClient: traktClient, mediaResolver: mediaResolver, watchedTmdbIds: watchedIds)
 
-        let (tMovies, tShows, pMovies, pShows, couchMoney, traktML, because) = await (
+        let (tMovies, tShows, pMovies, pShows, aMovies, aShows, mwMovies, mwShows, couchMoney, traktML, because) = await (
             trendingMoviesTask, trendingShowsTask, popularMoviesTask, popularShowsTask,
+            anticipatedMoviesTask, anticipatedShowsTask,
+            mostWatchedMoviesTask, mostWatchedShowsTask,
             couchMoneyTask, traktMLTask, becauseTask
         )
 
@@ -173,6 +206,10 @@ final class HomeViewModel {
         trendingShows = tShows
         popularMovies = pMovies
         popularShows = pShows
+        anticipatedMovies = aMovies
+        anticipatedShows = aShows
+        mostWatchedMovies = mwMovies
+        mostWatchedShows = mwShows
         recommendationShelves = couchMoney + traktML + because
     }
 
@@ -383,5 +420,27 @@ final class HomeViewModel {
     private nonisolated static func fetchTraktPopularShows(traktClient: TraktClient, mediaResolver: MediaResolver) async -> [MediaItem] {
         guard let popular = try? await traktClient.popularShows(limit: 20) else { return [] }
         return await mediaResolver.resolveShows(popular)
+    }
+
+    // MARK: - Anticipated & Most Watched
+
+    private nonisolated static func fetchTraktAnticipatedMovies(traktClient: TraktClient, mediaResolver: MediaResolver) async -> [MediaItem] {
+        guard let anticipated = try? await traktClient.anticipatedMovies(limit: 20) else { return [] }
+        return await mediaResolver.resolveMovies(anticipated.map(\.movie))
+    }
+
+    private nonisolated static func fetchTraktAnticipatedShows(traktClient: TraktClient, mediaResolver: MediaResolver) async -> [MediaItem] {
+        guard let anticipated = try? await traktClient.anticipatedShows(limit: 20) else { return [] }
+        return await mediaResolver.resolveShows(anticipated.map(\.show))
+    }
+
+    private nonisolated static func fetchTraktMostWatchedMovies(traktClient: TraktClient, mediaResolver: MediaResolver) async -> [MediaItem] {
+        guard let watched = try? await traktClient.mostWatchedMovies(period: "weekly", limit: 20) else { return [] }
+        return await mediaResolver.resolveMovies(watched.map(\.movie))
+    }
+
+    private nonisolated static func fetchTraktMostWatchedShows(traktClient: TraktClient, mediaResolver: MediaResolver) async -> [MediaItem] {
+        guard let watched = try? await traktClient.mostWatchedShows(period: "weekly", limit: 20) else { return [] }
+        return await mediaResolver.resolveShows(watched.map(\.show))
     }
 }

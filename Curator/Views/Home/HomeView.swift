@@ -67,6 +67,26 @@ struct HomeView: View {
                         MediaShelfView(title: "Popular Shows", items: viewModel.popularShows)
                     }
 
+                    if !viewModel.anticipatedMovies.isEmpty {
+                        MediaShelfView(title: "Most Anticipated Movies", items: viewModel.anticipatedMovies)
+                    }
+
+                    if !viewModel.anticipatedShows.isEmpty {
+                        MediaShelfView(title: "Most Anticipated Shows", items: viewModel.anticipatedShows)
+                    }
+
+                    if !viewModel.mostWatchedMovies.isEmpty {
+                        MediaShelfView(title: "Most Watched This Week", items: viewModel.mostWatchedMovies)
+                    }
+
+                    if !viewModel.mostWatchedShows.isEmpty {
+                        MediaShelfView(title: "Most Watched Shows This Week", items: viewModel.mostWatchedShows)
+                    }
+
+                    if !viewModel.hiddenGems.isEmpty {
+                        MediaShelfView(title: "Hidden Gems", items: viewModel.hiddenGems)
+                    }
+
                     if !viewModel.topRatedMovies.isEmpty {
                         MediaShelfView(title: "Top Rated Movies", items: viewModel.topRatedMovies)
                     }
@@ -106,6 +126,11 @@ struct HomeView: View {
         !viewModel.upcomingShows.isEmpty ||
         !viewModel.topRatedMovies.isEmpty ||
         !viewModel.topRatedShows.isEmpty ||
+        !viewModel.anticipatedMovies.isEmpty ||
+        !viewModel.anticipatedShows.isEmpty ||
+        !viewModel.mostWatchedMovies.isEmpty ||
+        !viewModel.mostWatchedShows.isEmpty ||
+        !viewModel.hiddenGems.isEmpty ||
         !viewModel.recommendationShelves.isEmpty
     }
 

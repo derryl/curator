@@ -43,6 +43,38 @@ actor TraktClient {
         ])
     }
 
+    // MARK: - Anticipated
+
+    func anticipatedMovies(page: Int = 1, limit: Int = 20) async throws -> [TraktAnticipatedMovie] {
+        try await get("/movies/anticipated", query: [
+            "page": String(page),
+            "limit": String(limit),
+        ])
+    }
+
+    func anticipatedShows(page: Int = 1, limit: Int = 20) async throws -> [TraktAnticipatedShow] {
+        try await get("/shows/anticipated", query: [
+            "page": String(page),
+            "limit": String(limit),
+        ])
+    }
+
+    // MARK: - Most Watched
+
+    func mostWatchedMovies(period: String = "weekly", page: Int = 1, limit: Int = 20) async throws -> [TraktMostWatchedMovie] {
+        try await get("/movies/watched/\(period)", query: [
+            "page": String(page),
+            "limit": String(limit),
+        ])
+    }
+
+    func mostWatchedShows(period: String = "weekly", page: Int = 1, limit: Int = 20) async throws -> [TraktMostWatchedShow] {
+        try await get("/shows/watched/\(period)", query: [
+            "page": String(page),
+            "limit": String(limit),
+        ])
+    }
+
     // MARK: - Recommendations (authenticated)
 
     func recommendedMovies(limit: Int = 20, ignoreWatched: Bool = false, ignoreCollected: Bool = false) async throws -> [TraktMovie] {
