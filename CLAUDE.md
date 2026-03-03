@@ -65,7 +65,8 @@ Key insight: Overseerr's `/movie/{tmdbId}` and `/tv/{tmdbId}` return TMDB metada
 
 - Root `TabView` with 4 tabs: Home, Browse, Search, Settings
 - Each tab uses independent `NavigationStack` (not `NavigationSplitView`)
-- `.onExitCommand` on non-Home tabs returns to Home; on Home, scrolls to top
+- Each non-Home tab receives a `switchToHome` closure from `ContentView`
+- `.onExitCommand` is path-aware: if deep in a stack, pops one level; if at root on non-Home tabs, calls `switchToHome()`; if at root on Home, scrolls to top
 - Detail views are pushed via `navigationDestination`
 
 ### Storage
@@ -80,12 +81,15 @@ Key insight: Overseerr's `/movie/{tmdbId}` and `/tv/{tmdbId}` return TMDB metada
 - `TabView` renders as auto-hiding top bar (native tvOS, different from iOS)
 - Trailer playback uses `AVPlayerViewController` with `appliesPreferredDisplayCriteriaAutomatically = false` to prevent Dolby Vision black screen flash
 - YouTube stream extraction filters to tvOS-safe codecs only (H.264/H.265 video, AAC audio) — VP9/AV1/Opus are rejected
+- YouTube stream URL validation uses Range GET (`bytes=0-0`) instead of HEAD requests — YouTube CDN rejects HEAD on adaptive streams, causing false 403s that cap quality at 720p
+- YouTube innertube client version (`androidClientBody` in `YouTubeStreamExtractor`) must be kept current — stale versions trigger bot detection. Update periodically by checking the latest Android YouTube app version
+- YouTube stream extraction retries once on transient errors (`networkError`, `allStreamsBroken`) with a 1-second delay. Non-transient errors (`ageRestricted`, `videoUnavailable`) fail immediately without retry
 
 ## Testing
 
 All network tests use `MockURLProtocol` (in `CuratorTests/Helpers/`) to intercept URLSession requests. Test fixtures live in `CuratorTests/Helpers/TestFixtures.swift`. No external testing frameworks — XCTest only.
 
-`YouTubeLiveIntegrationTests` hits real YouTube servers — these may be flaky in CI.
+`YouTubeLiveIntegrationTests` hits real YouTube servers — these may be flaky in CI. Consider running them in a separate test scheme to keep unit test suite fast (~1 min target). Use `-only-testing:` flags to run targeted test classes rather than the full suite during iterative development.
 
 ## XcodeGen
 
@@ -121,7 +125,7 @@ This project uses strict Swift 6 concurrency. All code must be data-race safe.
 - Use `nonisolated static func` for pure data-fetching helpers that don't access `self` — this avoids MainActor re-entry overhead and enables parallel execution via `async let`. See `HomeViewModel.fetchTraktTrendingMovies(...)` for the pattern.
 - Models (`MediaItem`, all Overseerr/Trakt response types) are `Sendable` structs. Never use classes for API response models.
 - Use `withTaskGroup` for fan-out patterns (resolving N items in parallel). See `MediaResolver.resolveMovies()`.
-- Use `async let` for fixed-count concurrent operations. See `HomeViewModel.loadTraktContent()` (11 concurrent shelf loads) and `DetailViewModel.loadMovieDetails()` (3 concurrent loads).
+- Use `async let` for fixed-count concurrent operations. See `HomeViewModel.loadTraktContent()` (11 concurrent shelf loads) and `DetailViewModel.loadMovieDetails()` (2 concurrent loads: details + similar).
 - Handle `CancellationError` explicitly in search/debounce contexts — don't surface it as a user error. See `SearchViewModel.search()`.
 
 ### Adding New Files
@@ -149,7 +153,7 @@ When adding new API endpoints:
 
 - All display data flows through `MediaItem`. Add a `static func from(...)` factory method for each new data source.
 - `MediaItem.id` format is `"{mediaType}-{tmdbId}"` (e.g. `"movie-550"`, `"tv-1399"`). This enables deduplication across sources.
-- `AvailabilityStatus` determines request button visibility and shelf sort order via `requestPriority`.
+- `AvailabilityStatus` determines request button visibility and shelf sort order via `requestPriority`. The request flow uses a single "Request" button that delegates profile selection to Overseerr's configured defaults — `OverseerrClient.createRequest()` sends only `mediaType` and `mediaId`, no `profileId`/`serverId`/`rootFolder`.
 - New Trakt response models go in `Models/Trakt/`, Overseerr models in `Models/Overseerr/`.
 
 ### View & Component Conventions
@@ -171,7 +175,7 @@ When adding new API endpoints:
 - Wrap every horizontally-scrollable region in `.focusSection()` — this is required for the Siri Remote d-pad to navigate up/down between shelves and left/right within them.
 - Use `.buttonStyle(.card)` (or the custom `.focusableCard` style) on all interactive cards — this provides the native tvOS lift, scale, parallax, and shadow on focus.
 - Use `@FocusState` and `prefersDefaultFocus(in:)` with `@Namespace` to control initial focus placement on detail screens. See `MovieDetailView` for the pattern.
-- Handle `.onExitCommand` on every `NavigationStack` to implement consistent Menu button behavior.
+- Handle `.onExitCommand` on every `NavigationStack`'s root content (not on the `NavigationStack` itself or on `ScrollView`). The handler must be path-aware: check `path.isEmpty` to decide between popping the navigation stack and performing the root-level action (scroll to top on Home, `switchToHome()` on other tabs). See `HomeView` and `SettingsView` for the pattern.
 - Use `NavigationStack` with `navigationDestination(for:)` — never `NavigationSplitView` or `NavigationLink(destination:)`.
 
 #### Image Handling
@@ -191,7 +195,7 @@ Add accessibility identifiers to all testable UI elements. Existing conventions:
 | `media_shelf` | `MediaShelfView` container |
 | `tab_home`, `tab_browse`, `tab_search`, `tab_settings` | `ContentView` tabs |
 | `button_trailer` | Trailer play button on detail views |
-| `button_request_{profileId}` | Request buttons on detail views |
+| `button_request` | Single request button on detail views |
 | `status_pill` | `StatusPill` on detail views |
 | `section_overview` | Overview section header |
 
