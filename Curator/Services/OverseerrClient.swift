@@ -62,16 +62,42 @@ actor OverseerrClient {
         try await get("/discover/tv/upcoming", query: ["page": String(page)])
     }
 
-    func discoverMoviesByGenre(genreId: Int, page: Int = 1, language: String? = nil) async throws -> OverseerrPagedResponse<OverseerrMediaResult> {
-        var params = ["page": String(page)]
+    func discoverMoviesByGenre(
+        genreId: Int,
+        page: Int = 1,
+        language: String? = nil,
+        sortBy: String? = nil,
+        voteAverageGte: Double? = nil,
+        voteCountGte: Int? = nil
+    ) async throws -> OverseerrPagedResponse<OverseerrMediaResult> {
+        var params = [
+            "page": String(page),
+            "genre": String(genreId),
+        ]
         if let language { params["language"] = language }
-        return try await get("/discover/movies/genre/\(genreId)", query: params)
+        if let sortBy { params["sortBy"] = sortBy }
+        if let voteAverageGte { params["voteAverageGte"] = String(voteAverageGte) }
+        if let voteCountGte { params["voteCountGte"] = String(voteCountGte) }
+        return try await get("/discover/movies", query: params)
     }
 
-    func discoverTvByGenre(genreId: Int, page: Int = 1, language: String? = nil) async throws -> OverseerrPagedResponse<OverseerrMediaResult> {
-        var params = ["page": String(page)]
+    func discoverTvByGenre(
+        genreId: Int,
+        page: Int = 1,
+        language: String? = nil,
+        sortBy: String? = nil,
+        voteAverageGte: Double? = nil,
+        voteCountGte: Int? = nil
+    ) async throws -> OverseerrPagedResponse<OverseerrMediaResult> {
+        var params = [
+            "page": String(page),
+            "genre": String(genreId),
+        ]
         if let language { params["language"] = language }
-        return try await get("/discover/tv/genre/\(genreId)", query: params)
+        if let sortBy { params["sortBy"] = sortBy }
+        if let voteAverageGte { params["voteAverageGte"] = String(voteAverageGte) }
+        if let voteCountGte { params["voteCountGte"] = String(voteCountGte) }
+        return try await get("/discover/tv", query: params)
     }
 
     func discoverMoviesByKeyword(keywordId: Int, page: Int = 1) async throws -> OverseerrPagedResponse<OverseerrMediaResult> {
