@@ -2,7 +2,11 @@
 
 ### Exploration: "Browse" Genres
 
-Many movies are tagged with multiple Genres in TMDB, which can cause a lot of cross-over between our different Browse Genres and therefore make them feel un-focused. For instance "Spongebob the Movie" appears as a top result in several genres (Adventure, Animation, Comedy, Family, etc.) which feels a bit wrong. Do we have any levers at our disposal to make Genre-browsing feel more meaningful? Additionally does the API support us making other arbitrary editorial choices, too -- such as requiring a minimum rating score, de-emphasizing "trending" titles, etc? And what approach might you suggest to achieve what I'm looking for?
+Up next: tweak and refine quality filter settings, and potentially incorporate Trakt personalization to augment genre grid results.
+
+### Movie / TV Detail View
+
+Year does not always appear beneath the Title. Please fix. Example the film "Zootopia" says "109 min" and shows "7.8" TMDB rating, but Year is omitted. It's supposed to appear to the left of runtime.
 
 ===============================================
 
@@ -15,3 +19,6 @@ Many movies are tagged with multiple Genres in TMDB, which can cause a lot of cr
 - [x] Fix YouTube intermittent auth errors (client version update + retry)
 - [x] Fix BACK button on Top Nav minimizing app (now navigates to Home)
 - [x] Fix tab navigation state persisting across tab switches (now resets on leave)
+- [x] Switch genre discovery to TMDB-backed base endpoint with quality filters (voteAvg≥6.5, voteCount≥200)
+- [x] Interleave recent well-reviewed releases near top of genre grids for freshness
+- [x] Add comprehensive genre discovery tests (19 tests covering endpoints, interleave, pagination, errors)
