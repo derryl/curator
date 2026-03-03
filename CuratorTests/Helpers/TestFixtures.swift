@@ -171,41 +171,6 @@ enum TestFixtures {
         return try! JSONSerialization.data(withJSONObject: json)
     }()
 
-    // MARK: - Service / Quality Profiles JSON
-
-    static let radarrServicesJSON: Data = {
-        let json: [[String: Any]] = [
-            [
-                "id": 1,
-                "name": "Radarr",
-                "is4k": false,
-                "isDefault": true,
-                "activeProfileId": 4,
-                "activeDirectory": "/movies",
-            ],
-        ]
-        return try! JSONSerialization.data(withJSONObject: json)
-    }()
-
-    static let radarrServiceDetailsJSON: Data = {
-        let json: [String: Any] = [
-            "server": [
-                "id": 1,
-                "name": "Radarr",
-                "is4k": false,
-                "isDefault": true,
-                "activeProfileId": 4,
-                "activeDirectory": "/movies",
-            ],
-            "profiles": [
-                ["id": 4, "name": "HD-1080p"],
-                ["id": 7, "name": "Ultra-HD 4K"],
-                ["id": 1, "name": "Any"],
-            ],
-        ]
-        return try! JSONSerialization.data(withJSONObject: json)
-    }()
-
     // MARK: - Person Combined Credits JSON
 
     static let personCombinedCreditsJSON: Data = {

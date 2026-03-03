@@ -129,19 +129,13 @@ struct MovieDetailView: View {
 
             let status = viewModel.movieDetails?.mediaInfo?.availabilityStatus ?? item.availability
             if status == .none || status == .unknown {
-                if !filteredProfiles.isEmpty {
+                Button {
+                    submitRequest()
+                } label: {
                     Text("Request")
-                        .foregroundStyle(.secondary)
                 }
-                ForEach(filteredProfiles) { profile in
-                    Button {
-                        submitRequest(profileId: profile.profileId)
-                    } label: {
-                        Text(profile.label)
-                    }
-                    .accessibilityIdentifier("button_request_\(profile.id)")
-                    .disabled(viewModel.isRequesting)
-                }
+                .accessibilityIdentifier("button_request")
+                .disabled(viewModel.isRequesting)
             } else {
                 StatusPill(status: status)
                     .accessibilityIdentifier("status_pill")
@@ -154,10 +148,6 @@ struct MovieDetailView: View {
         viewModel.movieDetails?.relatedVideos?
             .first(where: { $0.site == "YouTube" && $0.type == "Trailer" })?
             .key
-    }
-
-    private var filteredProfiles: [QualityOption] {
-        QualityOption.filtered(from: viewModel.qualityProfiles)
     }
 
     // MARK: - Content Sections
@@ -332,13 +322,12 @@ struct MovieDetailView: View {
         }
     }
 
-    private func submitRequest(profileId: Int) {
+    private func submitRequest() {
         Task {
             guard let client = appState.overseerrClient else { return }
             await viewModel.requestMedia(
                 mediaType: "movie",
                 mediaId: item.tmdbId,
-                profileId: profileId,
                 using: client
             )
             if case .success = viewModel.requestResult {
@@ -360,27 +349,5 @@ struct MovieDetailView: View {
             get: { trailerPlayer.error != nil },
             set: { if !$0 { trailerPlayer.dismissError() } }
         )
-    }
-}
-
-// MARK: - Quality Option
-
-struct QualityOption: Identifiable {
-    let id: String
-    let profileId: Int
-    let label: String
-
-    static func filtered(from profiles: [OverseerrQualityProfile]) -> [QualityOption] {
-        var fourK: QualityOption?
-        var tenEighty: QualityOption?
-        for profile in profiles {
-            let name = profile.name.lowercased()
-            if fourK == nil && (name.contains("4k") || name.contains("2160") || name.contains("uhd")) {
-                fourK = QualityOption(id: "4k", profileId: profile.id, label: "4K")
-            } else if tenEighty == nil && name.contains("1080") {
-                tenEighty = QualityOption(id: "1080", profileId: profile.id, label: "1080p")
-            }
-        }
-        return [tenEighty, fourK].compactMap { $0 }
     }
 }

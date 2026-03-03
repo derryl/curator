@@ -36,10 +36,6 @@ final class DetailViewModelTests: XCTestCase {
                 data = TestFixtures.movieDetailsJSON
             } else if path.contains("/person/") && path.contains("/combined_credits") {
                 data = TestFixtures.personCombinedCreditsJSON
-            } else if path.contains("/service/radarr/") {
-                data = TestFixtures.radarrServiceDetailsJSON
-            } else if path.contains("/service/radarr") {
-                data = TestFixtures.radarrServicesJSON
             } else {
                 XCTFail("Unexpected request: \(path)")
                 data = Data()
@@ -75,7 +71,6 @@ final class DetailViewModelTests: XCTestCase {
     // MARK: - requestMedia
 
     func testRequestMediaSetsSuccessOnOK() async {
-        // First load details so serviceId is populated
         MockURLProtocol.requestHandler = { request in
             let path = request.url!.path
             let data: Data
@@ -90,7 +85,7 @@ final class DetailViewModelTests: XCTestCase {
             return (response, data)
         }
 
-        await viewModel.requestMedia(mediaType: "movie", mediaId: 550, profileId: 4, using: client)
+        await viewModel.requestMedia(mediaType: "movie", mediaId: 550, using: client)
 
         if case .success = viewModel.requestResult {
             // expected
@@ -112,7 +107,7 @@ final class DetailViewModelTests: XCTestCase {
             return (response, TestFixtures.movieDetailsJSON)
         }
 
-        await viewModel.requestMedia(mediaType: "movie", mediaId: 550, profileId: 4, using: client)
+        await viewModel.requestMedia(mediaType: "movie", mediaId: 550, using: client)
 
         if case .failure(let msg) = viewModel.requestResult {
             XCTAssertTrue(msg.contains("500"))
@@ -122,8 +117,53 @@ final class DetailViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isRequesting)
     }
 
+    func testRequestMediaSendsOnlyMediaTypeAndMediaId() async {
+        var capturedRequest: URLRequest?
+        MockURLProtocol.requestHandler = { request in
+            let path = request.url!.path
+            if path.contains("/request") {
+                capturedRequest = request
+            }
+            let data: Data
+            if path.contains("/request") {
+                data = TestFixtures.mediaRequestJSON
+            } else if path.contains("/movie/550") {
+                data = TestFixtures.movieDetailsJSON
+            } else {
+                data = Data()
+            }
+            let response = TestFixtures.httpResponse(url: request.url!)
+            return (response, data)
+        }
+
+        await viewModel.requestMedia(mediaType: "movie", mediaId: 550, using: client)
+
+        let request = try! XCTUnwrap(capturedRequest)
+        XCTAssertEqual(request.httpMethod, "POST")
+
+        // Read body from httpBodyStream
+        if let stream = request.httpBodyStream {
+            stream.open()
+            var bodyData = Data()
+            let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: 1024)
+            while stream.hasBytesAvailable {
+                let read = stream.read(buffer, maxLength: 1024)
+                if read > 0 { bodyData.append(buffer, count: read) }
+            }
+            buffer.deallocate()
+            stream.close()
+
+            let json = try! JSONSerialization.jsonObject(with: bodyData) as! [String: Any]
+            XCTAssertEqual(json["mediaType"] as? String, "movie")
+            XCTAssertEqual(json["mediaId"] as? Int, 550)
+            // Should NOT contain profileId, serverId, or rootFolder
+            XCTAssertNil(json["profileId"])
+            XCTAssertNil(json["serverId"])
+            XCTAssertNil(json["rootFolder"])
+        }
+    }
+
     func testRequestMediaSetsIsRequestingDuringExecution() async {
-        // Use a continuation to control timing
         MockURLProtocol.requestHandler = { request in
             let response = TestFixtures.httpResponse(url: request.url!)
             let path = request.url!.path
@@ -154,10 +194,6 @@ final class DetailViewModelTests: XCTestCase {
                 data = TestFixtures.recommendedMoviesJSON
             } else if path.contains("/tv/1399") {
                 data = TestFixtures.tvDetailsJSON
-            } else if path.contains("/service/sonarr/") {
-                data = TestFixtures.radarrServiceDetailsJSON // same structure
-            } else if path.contains("/service/sonarr") {
-                data = TestFixtures.radarrServicesJSON
             } else {
                 data = Data()
             }

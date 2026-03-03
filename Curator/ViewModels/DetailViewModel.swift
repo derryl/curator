@@ -16,11 +16,6 @@ final class DetailViewModel {
     var isRequesting = false
     var requestResult: RequestResult?
 
-    // Quality profiles
-    var qualityProfiles: [OverseerrQualityProfile] = []
-    var serviceId: Int?
-    var rootFolder: String?
-
     enum RequestResult {
         case success
         case failure(String)
@@ -49,15 +44,12 @@ final class DetailViewModel {
                 genreIds: movieGenreIds
             )
 
-            // Fetch person-based shelves and quality profiles concurrently
-            async let personShelvesTask: Void = loadPersonShelves(
+            await loadPersonShelves(
                 credits: details.credits,
                 currentTmdbId: tmdbId,
                 isMovie: true,
                 using: client
             )
-            async let profilesTask: Void = loadQualityProfiles(for: "movie", using: client)
-            _ = await (personShelvesTask, profilesTask)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -88,15 +80,12 @@ final class DetailViewModel {
                 genreIds: tvGenreIds
             )
 
-            // Fetch person-based shelves and quality profiles concurrently
-            async let personShelvesTask: Void = loadPersonShelves(
+            await loadPersonShelves(
                 credits: details.credits,
                 currentTmdbId: tmdbId,
                 isMovie: false,
                 using: client
             )
-            async let profilesTask: Void = loadQualityProfiles(for: "tv", using: client)
-            _ = await (personShelvesTask, profilesTask)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -107,7 +96,6 @@ final class DetailViewModel {
     func requestMedia(
         mediaType: String,
         mediaId: Int,
-        profileId: Int? = nil,
         using client: OverseerrClient
     ) async {
         isRequesting = true
@@ -116,10 +104,7 @@ final class DetailViewModel {
         do {
             _ = try await client.createRequest(
                 mediaType: mediaType,
-                mediaId: mediaId,
-                serverId: serviceId,
-                profileId: profileId,
-                rootFolder: rootFolder
+                mediaId: mediaId
             )
             requestResult = .success
 
@@ -312,28 +297,4 @@ final class DetailViewModel {
         )
     }
 
-    private func loadQualityProfiles(for mediaType: String, using client: OverseerrClient) async {
-        do {
-            if mediaType == "movie" {
-                let services = try await client.radarrServices()
-                if let defaultService = services.first(where: { $0.isDefault == true }) ?? services.first {
-                    let details = try await client.radarrServiceDetails(serverId: defaultService.id)
-                    qualityProfiles = details.profiles
-                    serviceId = defaultService.id
-                    rootFolder = defaultService.activeDirectory
-                }
-            } else {
-                let services = try await client.sonarrServices()
-                if let defaultService = services.first(where: { $0.isDefault == true }) ?? services.first {
-                    let details = try await client.sonarrServiceDetails(serverId: defaultService.id)
-                    qualityProfiles = details.profiles
-                    serviceId = defaultService.id
-                    rootFolder = defaultService.activeDirectory
-                }
-            }
-        } catch {
-            // Non-fatal — request will just use server defaults
-            qualityProfiles = []
-        }
-    }
 }

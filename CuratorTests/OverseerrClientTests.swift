@@ -47,10 +47,7 @@ final class OverseerrClientTests: XCTestCase {
 
         _ = try await client.createRequest(
             mediaType: "movie",
-            mediaId: 550,
-            serverId: 1,
-            profileId: 4,
-            rootFolder: "/movies"
+            mediaId: 550
         )
 
         let request = try XCTUnwrap(capturedRequest)
@@ -63,9 +60,9 @@ final class OverseerrClientTests: XCTestCase {
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
         XCTAssertEqual(json["mediaType"] as? String, "movie")
         XCTAssertEqual(json["mediaId"] as? Int, 550)
-        XCTAssertEqual(json["serverId"] as? Int, 1)
-        XCTAssertEqual(json["profileId"] as? Int, 4)
-        XCTAssertEqual(json["rootFolder"] as? String, "/movies")
+        XCTAssertNil(json["serverId"])
+        XCTAssertNil(json["profileId"])
+        XCTAssertNil(json["rootFolder"])
     }
 
     func testCreateRequestThrowsOnServerError() async {

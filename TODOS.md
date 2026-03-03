@@ -1,13 +1,12 @@
 ## Running list of user todo's
 
-### Fixes to request format
+### Changes to request format
 
-When tapping "4K" to request a Movie title, the Movie is being requested using Radarr's "4K UltraHD" profile. This is incorrect, please use the Profile labeled "4K" as returned by Overseer.
+Currently we present two "Request" buttons [1080p] and [4K] for both Movies and TV Shows. This requires manual parsing of user's profiles for the two services (Radarr and Sonarr) which creates bug surface area and also isn't really necessary -- the user will always click [4K] anyway and this is what's configured as default for each service in Overseerr. So let's simplify it.
 
-Expected behavior for the 2 request buttons are as follows:
-
-- Movies: 1080p button = "1080p" Radarr profile, 4K = "4K" Radarr profile
-- TV Shows: 1080p button = "1080p" Sonarr profile, 4K = "4K or 1080" Sonarr profile
+- instead of two buttons [1080p] and [4k] there is one button labeled [Request]
+- tapping [Request] requests the title using default profile configured in Overseerr
+- if a title is already requested, its Request Status appears in place of the [Request] button
 
 ### Navigation Fixes
 

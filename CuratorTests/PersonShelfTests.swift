@@ -38,10 +38,6 @@ final class PersonShelfTests: XCTestCase {
                 data = TestFixtures.movieDetailsWithCrewJSON
             } else if path.contains("/person/819/combined_credits") {
                 data = TestFixtures.personCombinedCreditsJSON
-            } else if path.contains("/service/radarr/") {
-                data = TestFixtures.radarrServiceDetailsJSON
-            } else if path.contains("/service/radarr") {
-                data = TestFixtures.radarrServicesJSON
             } else {
                 data = Data()
             }
@@ -68,10 +64,6 @@ final class PersonShelfTests: XCTestCase {
                 data = TestFixtures.recommendedMoviesJSON
             } else if path.contains("/movie/550") {
                 data = TestFixtures.movieDetailsWithCrewJSON
-            } else if path.contains("/service/radarr/") {
-                data = TestFixtures.radarrServiceDetailsJSON
-            } else if path.contains("/service/radarr") {
-                data = TestFixtures.radarrServicesJSON
             } else {
                 data = Data()
             }
@@ -102,10 +94,6 @@ final class PersonShelfTests: XCTestCase {
                 data = TestFixtures.recommendedMoviesJSON
             } else if path.contains("/movie/550") {
                 data = TestFixtures.movieDetailsWithCrewJSON
-            } else if path.contains("/service/radarr/") {
-                data = TestFixtures.radarrServiceDetailsJSON
-            } else if path.contains("/service/radarr") {
-                data = TestFixtures.radarrServicesJSON
             } else {
                 data = Data()
             }
@@ -133,10 +121,6 @@ final class PersonShelfTests: XCTestCase {
                 data = TestFixtures.recommendedMoviesJSON
             } else if path.contains("/tv/1399") {
                 data = TestFixtures.tvDetailsWithCrewJSON
-            } else if path.contains("/service/sonarr/") {
-                data = TestFixtures.radarrServiceDetailsJSON
-            } else if path.contains("/service/sonarr") {
-                data = TestFixtures.radarrServicesJSON
             } else {
                 data = Data()
             }
@@ -162,10 +146,6 @@ final class PersonShelfTests: XCTestCase {
                 data = TestFixtures.recommendedMoviesJSON
             } else if path.contains("/tv/1399") {
                 data = TestFixtures.tvDetailsWithCrewJSON
-            } else if path.contains("/service/sonarr/") {
-                data = TestFixtures.radarrServiceDetailsJSON
-            } else if path.contains("/service/sonarr") {
-                data = TestFixtures.radarrServicesJSON
             } else {
                 data = Data()
             }
@@ -193,10 +173,6 @@ final class PersonShelfTests: XCTestCase {
                 data = TestFixtures.recommendedMoviesJSON
             } else if path.contains("/movie/550") {
                 data = TestFixtures.movieDetailsWithCrewJSON
-            } else if path.contains("/service/radarr/") {
-                data = TestFixtures.radarrServiceDetailsJSON
-            } else if path.contains("/service/radarr") {
-                data = TestFixtures.radarrServicesJSON
             } else {
                 data = Data()
             }
@@ -230,10 +206,6 @@ final class PersonShelfTests: XCTestCase {
                 data = TestFixtures.recommendedMoviesJSON
             } else if path.contains("/movie/550") {
                 data = TestFixtures.movieDetailsJSON // No crew in this fixture
-            } else if path.contains("/service/radarr/") {
-                data = TestFixtures.radarrServiceDetailsJSON
-            } else if path.contains("/service/radarr") {
-                data = TestFixtures.radarrServicesJSON
             } else {
                 data = Data()
             }

@@ -132,40 +132,16 @@ actor OverseerrClient {
         try await get("/person/\(personId)/combined_credits")
     }
 
-    // MARK: - Service Configuration (Quality Profiles)
-
-    func radarrServices() async throws -> [OverseerrServiceInfo] {
-        try await get("/service/radarr")
-    }
-
-    func radarrServiceDetails(serverId: Int) async throws -> OverseerrServiceDetails {
-        try await get("/service/radarr/\(serverId)")
-    }
-
-    func sonarrServices() async throws -> [OverseerrServiceInfo] {
-        try await get("/service/sonarr")
-    }
-
-    func sonarrServiceDetails(serverId: Int) async throws -> OverseerrServiceDetails {
-        try await get("/service/sonarr/\(serverId)")
-    }
-
     // MARK: - Requests
 
     func createRequest(
         mediaType: String,
-        mediaId: Int,
-        serverId: Int? = nil,
-        profileId: Int? = nil,
-        rootFolder: String? = nil
+        mediaId: Int
     ) async throws -> OverseerrMediaRequest {
-        var body: [String: Any] = [
+        let body: [String: Any] = [
             "mediaType": mediaType,
             "mediaId": mediaId,
         ]
-        if let serverId { body["serverId"] = serverId }
-        if let profileId { body["profileId"] = profileId }
-        if let rootFolder { body["rootFolder"] = rootFolder }
         return try await post("/request", body: body)
     }
 

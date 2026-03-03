@@ -130,19 +130,13 @@ struct TVDetailView: View {
 
             let status = viewModel.tvDetails?.mediaInfo?.availabilityStatus ?? item.availability
             if status == .none || status == .unknown {
-                if !filteredProfiles.isEmpty {
+                Button {
+                    submitRequest()
+                } label: {
                     Text("Request")
-                        .foregroundStyle(.secondary)
                 }
-                ForEach(filteredProfiles) { profile in
-                    Button {
-                        submitRequest(profileId: profile.profileId)
-                    } label: {
-                        Text(profile.label)
-                    }
-                    .accessibilityIdentifier("button_request_\(profile.id)")
-                    .disabled(viewModel.isRequesting)
-                }
+                .accessibilityIdentifier("button_request")
+                .disabled(viewModel.isRequesting)
             } else {
                 StatusPill(status: status)
                     .accessibilityIdentifier("status_pill")
@@ -155,10 +149,6 @@ struct TVDetailView: View {
         viewModel.tvDetails?.relatedVideos?
             .first(where: { $0.site == "YouTube" && $0.type == "Trailer" })?
             .key
-    }
-
-    private var filteredProfiles: [QualityOption] {
-        QualityOption.filtered(from: viewModel.qualityProfiles)
     }
 
     // MARK: - Content Sections
@@ -376,13 +366,12 @@ struct TVDetailView: View {
         }
     }
 
-    private func submitRequest(profileId: Int) {
+    private func submitRequest() {
         Task {
             guard let client = appState.overseerrClient else { return }
             await viewModel.requestMedia(
                 mediaType: "tv",
                 mediaId: item.tmdbId,
-                profileId: profileId,
                 using: client
             )
             if case .success = viewModel.requestResult {
