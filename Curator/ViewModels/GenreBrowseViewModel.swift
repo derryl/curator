@@ -110,7 +110,7 @@ final class GenreBrowseViewModel {
     /// Interleave fresh (recent) picks into the baseline results, weighted toward the top.
     /// Fresh items are inserted at increasing intervals so they cluster near the start
     /// and taper off, avoiding an artificial "block" of new releases.
-    private static func interleave(baseline: [MediaItem], fresh: [MediaItem]) -> [MediaItem] {
+    static func interleave(baseline: [MediaItem], fresh: [MediaItem]) -> [MediaItem] {
         let baselineIDs = Set(baseline.map(\.id))
         let uniqueFresh = fresh.filter { !baselineIDs.contains($0.id) }
         guard !uniqueFresh.isEmpty else { return baseline }
