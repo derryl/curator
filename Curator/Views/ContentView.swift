@@ -37,5 +37,23 @@ struct ContentView: View {
                 .tag(3)
                 .accessibilityIdentifier("tab_settings")
         }
+        .onExitCommand {
+            // When the Top Nav (tab bar) has focus, BACK should go to Home — not minimize the app
+            if selectedTab != 0 {
+                selectedTab = 0
+            } else {
+                homeScrollToTop = true
+            }
+        }
+        .onChange(of: selectedTab) { oldValue, _ in
+            // Discard navigation state of the tab we're leaving so it resets to root
+            switch oldValue {
+            case 0: homePath = NavigationPath()
+            case 1: browsePath = NavigationPath()
+            case 2: searchPath = NavigationPath()
+            case 3: settingsPath = NavigationPath()
+            default: break
+            }
+        }
     }
 }
