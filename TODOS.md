@@ -4,10 +4,6 @@
 
 Up next: tweak and refine quality filter settings, and potentially incorporate Trakt personalization to augment genre grid results.
 
-### Movie / TV Detail View
-
-Year does not always appear beneath the Title. Please fix. Example the film "Zootopia" says "109 min" and shows "7.8" TMDB rating, but Year is omitted. It's supposed to appear to the left of runtime.
-
 ===============================================
 
 #### Finished todo's
@@ -22,3 +18,4 @@ Year does not always appear beneath the Title. Please fix. Example the film "Zoo
 - [x] Switch genre discovery to TMDB-backed base endpoint with quality filters (voteAvg≥6.5, voteCount≥200)
 - [x] Interleave recent well-reviewed releases near top of genre grids for freshness
 - [x] Add comprehensive genre discovery tests (19 tests covering endpoints, interleave, pagination, errors)
+- [x] Fix missing year on movie/TV detail views (fall back to detail model's releaseDate/firstAirDate)
