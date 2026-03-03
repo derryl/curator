@@ -96,7 +96,10 @@ struct TVDetailView: View {
 
     private var heroMetadata: [String] {
         var items: [String] = []
-        if let year = item.year {
+        let year = item.year ?? viewModel.tvDetails?.firstAirDate.flatMap {
+            $0.count >= 4 ? Int($0.prefix(4)) : nil
+        }
+        if let year {
             items.append(String(year))
         }
         if let seasons = viewModel.tvDetails?.numberOfSeasons {

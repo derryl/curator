@@ -95,7 +95,10 @@ struct MovieDetailView: View {
 
     private var heroMetadata: [String] {
         var items: [String] = []
-        if let year = item.year {
+        let year = item.year ?? viewModel.movieDetails?.releaseDate.flatMap {
+            $0.count >= 4 ? Int($0.prefix(4)) : nil
+        }
+        if let year {
             items.append(String(year))
         }
         if let runtime = viewModel.movieDetails?.runtime {
