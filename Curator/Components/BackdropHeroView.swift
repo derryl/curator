@@ -107,7 +107,7 @@ struct BackdropHeroView<Actions: View>: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 650)
+            .frame(height: 650, alignment: .top)
             .clipped()
         } else {
             Rectangle()
