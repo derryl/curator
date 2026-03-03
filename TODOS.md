@@ -19,3 +19,4 @@ Up next: tweak and refine quality filter settings, and potentially incorporate T
 - [x] Interleave recent well-reviewed releases near top of genre grids for freshness
 - [x] Add comprehensive genre discovery tests (19 tests covering endpoints, interleave, pagination, errors)
 - [x] Fix missing year on movie/TV detail views (fall back to detail model's releaseDate/firstAirDate)
+- [x] Fix backdrop image positioning on detail views (top-align to avoid nav bar occlusion)
