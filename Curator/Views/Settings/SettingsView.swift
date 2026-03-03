@@ -8,6 +8,7 @@ enum SettingsDestination: Hashable {
 struct SettingsView: View {
     @Environment(AppState.self) private var appState
     @Binding var path: NavigationPath
+    var switchToHome: () -> Void
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -42,6 +43,13 @@ struct SettingsView: View {
                             }
                         }
                     }
+                }
+            }
+            .onExitCommand {
+                if !path.isEmpty {
+                    path.removeLast()
+                } else {
+                    switchToHome()
                 }
             }
             .navigationTitle("Settings")

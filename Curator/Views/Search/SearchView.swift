@@ -4,6 +4,7 @@ struct SearchView: View {
     @Environment(AppState.self) private var appState
     @State private var viewModel = SearchViewModel()
     @Binding var path: NavigationPath
+    var switchToHome: () -> Void
 
     private let columns = [
         GridItem(.adaptive(minimum: 240, maximum: 280), spacing: 40),
@@ -24,6 +25,13 @@ struct SearchView: View {
                     emptyState
                 } else {
                     resultsGrid
+                }
+            }
+            .onExitCommand {
+                if !path.isEmpty {
+                    path.removeLast()
+                } else {
+                    switchToHome()
                 }
             }
             .navigationTitle("Search")

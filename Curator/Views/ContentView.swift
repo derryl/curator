@@ -24,27 +24,18 @@ struct ContentView: View {
                 .tabItem { Label("Home", systemImage: "house") }
                 .tag(0)
                 .accessibilityIdentifier("tab_home")
-            GenreListView(path: $browsePath)
-                .onExitCommand { selectedTab = 0 }
+            GenreListView(path: $browsePath, switchToHome: { selectedTab = 0 })
                 .tabItem { Label("Browse", systemImage: "square.grid.2x2") }
                 .tag(1)
                 .accessibilityIdentifier("tab_browse")
-            SearchView(path: $searchPath)
-                .onExitCommand { selectedTab = 0 }
+            SearchView(path: $searchPath, switchToHome: { selectedTab = 0 })
                 .tabItem { Label("Search", systemImage: "magnifyingglass") }
                 .tag(2)
                 .accessibilityIdentifier("tab_search")
-            SettingsView(path: $settingsPath)
-                .onExitCommand { selectedTab = 0 }
+            SettingsView(path: $settingsPath, switchToHome: { selectedTab = 0 })
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(3)
                 .accessibilityIdentifier("tab_settings")
-        }
-        .onChange(of: selectedTab) {
-            homePath = NavigationPath()
-            browsePath = NavigationPath()
-            searchPath = NavigationPath()
-            settingsPath = NavigationPath()
         }
     }
 }

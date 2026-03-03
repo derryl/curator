@@ -5,6 +5,7 @@ struct GenreListView: View {
     @State private var viewModel = GenreBrowseViewModel()
     @State private var selectedMediaType = 0
     @Binding var path: NavigationPath
+    var switchToHome: () -> Void
 
     private let columns = [
         GridItem(.adaptive(minimum: 300, maximum: 400), spacing: 40),
@@ -21,6 +22,13 @@ struct GenreListView: View {
                     }
                 } else {
                     genreContent
+                }
+            }
+            .onExitCommand {
+                if !path.isEmpty {
+                    path.removeLast()
+                } else {
+                    switchToHome()
                 }
             }
             .navigationTitle("")
