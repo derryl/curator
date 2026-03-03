@@ -24,13 +24,6 @@ struct GenreListView: View {
                     genreContent
                 }
             }
-            .onExitCommand {
-                if !path.isEmpty {
-                    path.removeLast()
-                } else {
-                    switchToHome()
-                }
-            }
             .navigationTitle("")
             .navigationDestination(for: GenreDestination.self) { dest in
                 GenreResultsView(
@@ -61,6 +54,13 @@ struct GenreListView: View {
                 if viewModel.movieGenres.isEmpty {
                     loadGenres()
                 }
+            }
+        }
+        .onExitCommand {
+            if !path.isEmpty {
+                path.removeLast()
+            } else {
+                switchToHome()
             }
         }
     }

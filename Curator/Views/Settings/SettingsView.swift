@@ -45,13 +45,6 @@ struct SettingsView: View {
                     }
                 }
             }
-            .onExitCommand {
-                if !path.isEmpty {
-                    path.removeLast()
-                } else {
-                    switchToHome()
-                }
-            }
             .navigationTitle("Settings")
             .navigationDestination(for: SettingsDestination.self) { destination in
                 switch destination {
@@ -60,6 +53,13 @@ struct SettingsView: View {
                 case .trakt:
                     TraktSetupView()
                 }
+            }
+        }
+        .onExitCommand {
+            if !path.isEmpty {
+                path.removeLast()
+            } else {
+                switchToHome()
             }
         }
     }

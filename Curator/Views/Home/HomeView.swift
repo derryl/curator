@@ -19,13 +19,6 @@ struct HomeView: View {
                     contentScrollView
                 }
             }
-            .onExitCommand {
-                if !path.isEmpty {
-                    path.removeLast()
-                } else {
-                    scrollToTop = true
-                }
-            }
             .navigationDestination(for: MediaItem.self) { item in
                 switch item.mediaType {
                 case .movie:
@@ -48,6 +41,13 @@ struct HomeView: View {
                 if !hasAnyContent {
                     loadContent()
                 }
+            }
+        }
+        .onExitCommand {
+            if !path.isEmpty {
+                path.removeLast()
+            } else {
+                scrollToTop = true
             }
         }
     }

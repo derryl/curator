@@ -27,13 +27,6 @@ struct SearchView: View {
                     resultsGrid
                 }
             }
-            .onExitCommand {
-                if !path.isEmpty {
-                    path.removeLast()
-                } else {
-                    switchToHome()
-                }
-            }
             .navigationTitle("Search")
             .navigationDestination(for: MediaItem.self) { item in
                 switch item.mediaType {
@@ -52,6 +45,13 @@ struct SearchView: View {
                     keywordName: keyword.name,
                     mediaType: keyword.mediaType
                 )
+            }
+        }
+        .onExitCommand {
+            if !path.isEmpty {
+                path.removeLast()
+            } else {
+                switchToHome()
             }
         }
     }
