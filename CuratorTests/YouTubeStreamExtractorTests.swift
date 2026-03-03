@@ -138,7 +138,7 @@ final class YouTubeStreamExtractorTests: XCTestCase {
 
         MockURLProtocol.requestHandler = { request in
             // HEAD request to validate adaptive URLs
-            if request.httpMethod == "HEAD" {
+            if request.value(forHTTPHeaderField: "Range") == "bytes=0-0" {
                 let urlStr = request.url!.absoluteString
                 if urlStr.contains("itag=137") {
                     // 1080p returns 403
@@ -166,7 +166,7 @@ final class YouTubeStreamExtractorTests: XCTestCase {
         let session = TestFixtures.mockSession()
 
         MockURLProtocol.requestHandler = { request in
-            if request.httpMethod == "HEAD" {
+            if request.value(forHTTPHeaderField: "Range") == "bytes=0-0" {
                 let response = TestFixtures.httpResponse(url: request.url!, statusCode: 403)
                 return (response, Data())
             }
@@ -187,7 +187,7 @@ final class YouTubeStreamExtractorTests: XCTestCase {
         let session = TestFixtures.mockSession()
 
         MockURLProtocol.requestHandler = { request in
-            if request.httpMethod == "HEAD" {
+            if request.value(forHTTPHeaderField: "Range") == "bytes=0-0" {
                 let urlStr = request.url!.absoluteString
                 if urlStr.contains("itag=140") {
                     // Audio URL returns 403
@@ -367,7 +367,7 @@ final class YouTubeStreamExtractorTests: XCTestCase {
         let client = context?["client"] as? [String: Any]
 
         XCTAssertEqual(client?["clientName"] as? String, "ANDROID")
-        XCTAssertEqual(client?["clientVersion"] as? String, "19.09.37")
+        XCTAssertEqual(client?["clientVersion"] as? String, "19.44.38")
         XCTAssertEqual(json["videoId"] as? String, "testVideoId")
     }
 
@@ -461,6 +461,38 @@ final class YouTubeStreamExtractorTests: XCTestCase {
         XCTAssertTrue(TrailerError.networkError.userMessage.contains("Network"))
         XCTAssertTrue(TrailerError.compositionFailed.userMessage.contains("prepare"))
         XCTAssertTrue(TrailerError.playbackTimeout.userMessage.contains("too long"))
+    }
+
+    // MARK: - Retry on Transient Failure
+
+    func testRetriesOnceAfterTransientFailure() async throws {
+        let session = TestFixtures.mockSession()
+        var innertubeCallCount = 0
+
+        MockURLProtocol.requestHandler = { request in
+            let response = TestFixtures.httpResponse(url: request.url!)
+            if request.url?.path == "/youtubei/v1/player" {
+                innertubeCallCount += 1
+                if innertubeCallCount <= 2 {
+                    // First attempt: both innertube calls fail
+                    return (TestFixtures.httpResponse(url: request.url!, statusCode: 403), Data())
+                } else {
+                    // Retry: succeed
+                    return (response, TestFixtures.youtubeInnertubeResponseJSON)
+                }
+            }
+            // Reject HTML scraping too (force retry path)
+            if request.url?.path == "/watch" {
+                return (TestFixtures.httpResponse(url: request.url!, statusCode: 500), Data())
+            }
+            return (response, Data())
+        }
+
+        let result = try await YouTubeStreamExtractor.extractStream(for: "test", session: session)
+
+        // First attempt: 2 innertube calls (android + embedded) + HTML scrape, then retry: android succeeds
+        XCTAssertTrue(innertubeCallCount >= 3)
+        XCTAssertNotNil(result.videoURL)
     }
 
     // MARK: - selectStream Direct Tests

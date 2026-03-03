@@ -227,7 +227,8 @@ enum YouTubeStreamExtractor {
     /// Throws `TrailerError` with a specific reason on failure.
     static func extractStream(
         for videoID: String,
-        session: URLSession = .shared
+        session: URLSession = .shared,
+        retryCount: Int = 1
     ) async throws -> StreamResult {
         // Strategy 1: Innertube ANDROID client (best quality, most formats)
         let androidResult = await extractViaInnertube(
@@ -259,13 +260,27 @@ enum YouTubeStreamExtractor {
         }
 
         // Determine the best error to surface
+        let bestError: TrailerError
         if case .failure(let error) = androidResult {
-            throw error
+            bestError = error
+        } else if case .failure(let error) = embeddedResult {
+            bestError = error
+        } else {
+            bestError = .allStreamsBroken
         }
-        if case .failure(let error) = embeddedResult {
-            throw error
+
+        // Retry once for transient errors (network/CDN issues), not content errors
+        if retryCount > 0 {
+            switch bestError {
+            case .networkError, .allStreamsBroken:
+                try? await Task.sleep(for: .seconds(1))
+                return try await extractStream(for: videoID, session: session, retryCount: retryCount - 1)
+            case .ageRestricted, .videoUnavailable, .compositionFailed, .playbackTimeout:
+                break // Don't retry — same result every time
+            }
         }
-        throw TrailerError.allStreamsBroken
+
+        throw bestError
     }
 
     /// Legacy convenience that returns a single URL.
@@ -279,7 +294,7 @@ enum YouTubeStreamExtractor {
         "context": [
             "client": [
                 "clientName": "ANDROID",
-                "clientVersion": "19.09.37",
+                "clientVersion": "19.44.38",
                 "androidSdkVersion": 34,
                 "hl": "en",
                 "gl": "US",
@@ -287,7 +302,7 @@ enum YouTubeStreamExtractor {
         ] as [String: Any],
     ]
 
-    static let androidUserAgent = "com.google.android.youtube/19.09.37 (Linux; U; Android 14) gzip"
+    static let androidUserAgent = "com.google.android.youtube/19.44.38 (Linux; U; Android 14) gzip"
 
     nonisolated(unsafe) static let embeddedClientBody: [String: Any] = [
         "context": [
@@ -559,10 +574,12 @@ enum YouTubeStreamExtractor {
         return nil
     }
 
-    /// Sends a HEAD request to check if a stream URL is accessible (not 403/blocked).
+    /// Sends a range GET request to check if a stream URL is accessible (not 403/blocked).
+    /// Uses Range: bytes=0-0 instead of HEAD because YouTube often rejects HEAD on adaptive streams.
     static func validateStreamURL(_ url: URL, session: URLSession) async -> Bool {
         var request = URLRequest(url: url)
-        request.httpMethod = "HEAD"
+        request.httpMethod = "GET"
+        request.setValue("bytes=0-0", forHTTPHeaderField: "Range")
         request.timeoutInterval = 5
         guard let (_, response) = try? await session.data(for: request),
               let httpResponse = response as? HTTPURLResponse else {
