@@ -23,7 +23,7 @@ xcodebuild test -project Curator.xcodeproj -scheme CuratorTests \
 # Run a single test class
 xcodebuild test -project Curator.xcodeproj -scheme CuratorTests \
   -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' \
-  -only-testing:CuratorTests/YouTubeStreamExtractorTests
+  -only-testing:CuratorTests/SomeTestClass
 
 # Run UI tests
 xcodebuild test -project Curator.xcodeproj -scheme CuratorUITests \
@@ -79,17 +79,13 @@ Key insight: Overseerr's `/movie/{tmdbId}` and `/tv/{tmdbId}` return TMDB metada
 - `.buttonStyle(.card)` on `MediaCard` — native lift/scale/parallax focus effects
 - `.focusSection()` on each `MediaShelfView` — enables up/down between shelves, left/right within
 - `TabView` renders as auto-hiding top bar (native tvOS, different from iOS)
-- Trailer playback uses `AVPlayerViewController` with `appliesPreferredDisplayCriteriaAutomatically = false` to prevent Dolby Vision black screen flash
-- YouTube stream extraction filters to tvOS-safe codecs only (H.264/H.265 video, AAC audio) — VP9/AV1/Opus are rejected
-- YouTube stream URL validation uses Range GET (`bytes=0-0`) instead of HEAD requests — YouTube CDN rejects HEAD on adaptive streams, causing false 403s that cap quality at 720p
-- YouTube innertube client version (`androidClientBody` in `YouTubeStreamExtractor`) must be kept current — stale versions trigger bot detection. Update periodically by checking the latest Android YouTube app version
-- YouTube stream extraction retries once on transient errors (`networkError`, `allStreamsBroken`) with a 1-second delay. Non-transient errors (`ageRestricted`, `videoUnavailable`) fail immediately without retry
+- Trailer playback opens the YouTube tvOS app externally (in-app playback via yt-dlp backend is planned — see PLAN.md Phase 6)
 
 ## Testing
 
 All network tests use `MockURLProtocol` (in `CuratorTests/Helpers/`) to intercept URLSession requests. Test fixtures live in `CuratorTests/Helpers/TestFixtures.swift`. No external testing frameworks — XCTest only.
 
-`YouTubeLiveIntegrationTests` hits real YouTube servers — these may be flaky in CI. Consider running them in a separate test scheme to keep unit test suite fast (~1 min target). Use `-only-testing:` flags to run targeted test classes rather than the full suite during iterative development.
+Use `-only-testing:` flags to run targeted test classes rather than the full suite during iterative development.
 
 ## XcodeGen
 

@@ -8,8 +8,6 @@ struct TVDetailView: View {
     let item: MediaItem
     @State private var showRequestResult = false
     @State private var requestResultMessage = ""
-    @State private var trailerPlayer = TrailerPlayer()
-
     var body: some View {
         Group {
             if viewModel.isLoading {
@@ -53,29 +51,6 @@ struct TVDetailView: View {
             Button("OK") {}
         } message: {
             Text(requestResultMessage)
-        }
-        .overlay {
-            if trailerPlayer.isLoading {
-                ZStack {
-                    Color.black.opacity(0.6).ignoresSafeArea()
-                    ProgressView()
-                }
-            }
-        }
-        .alert("Trailer Error", isPresented: trailerErrorBinding) {
-            if let key = trailerKey {
-                Button("Open in YouTube") {
-                    TrailerPlayer.openExternally(videoKey: key)
-                    trailerPlayer.dismissError()
-                }
-            }
-            Button("OK", role: .cancel) {
-                trailerPlayer.dismissError()
-            }
-        } message: {
-            if let error = trailerPlayer.error {
-                Text(error.userMessage)
-            }
         }
     }
 
@@ -388,13 +363,6 @@ struct TVDetailView: View {
     }
 
     private func openTrailer(key: String) {
-        trailerPlayer.play(videoKey: key)
-    }
-
-    private var trailerErrorBinding: Binding<Bool> {
-        Binding(
-            get: { trailerPlayer.error != nil },
-            set: { if !$0 { trailerPlayer.dismissError() } }
-        )
+        TrailerPlayer.openExternally(videoKey: key)
     }
 }

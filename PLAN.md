@@ -273,8 +273,7 @@ Sections:
 **MovieDetailView / TVDetailView:**
 - Hero: full-width backdrop + poster + title + year + runtime + genres
 - Action buttons row: Trailer button + Request quality buttons (or StatusPill when requested/available)
-- In-app trailer playback via YouTube stream extraction (1080p+ adaptive, tvOS codec filtering, error alerts)
-- `appliesPreferredDisplayCriteriaAutomatically = false` prevents Dolby Vision black screen flash
+- Trailer button opens YouTube app externally (in-app playback via yt-dlp backend planned for Phase 6)
 - Overview text
 - Cast/crew horizontal scroll
 - "You Might Like" shelf (merged similar + recommended, genre-filtered)
@@ -377,7 +376,7 @@ Device Code OAuth 2.0 — ideal for TV (no keyboard-heavy entry):
 28. ~~App icon~~ -- Custom icon with improved cropping
 29. TestFlight build and distribution
 30. "See All" paginated grid views (deferred from Phase 3)
-31. ~~In-app trailer playback~~ -- Full YouTube stream extraction with codec filtering, cascading quality, Dolby Vision fix, error UI, 36 unit+integration tests
+31. Trailer playback -- Currently opens YouTube app externally. In-app playback via yt-dlp backend planned (see Phase 6)
 32. ~~Status pill placement~~ -- Moved inline with hero action buttons (replaces request buttons when status active)
 
 ### Phase 6: Future Opportunities
@@ -386,7 +385,7 @@ Device Code OAuth 2.0 — ideal for TV (no keyboard-heavy entry):
 35. Region/language picker in Settings for content filtering
 36. Deep link support (Siri, URL schemes)
 37. Background refresh for request status polling
-38. Custom lightweight trailer player (bypass AVPlayerViewController transport bar for instant Menu dismiss)
+38. In-app trailer playback via yt-dlp backend — Spin up a lightweight web server (e.g. FastAPI + yt-dlp) that resolves YouTube stream URLs on demand. The app calls the server to get a direct MP4 URL, then plays it with AVPlayer. Pre-fetch the stream URL on detail view load (resolution takes 5-10s) and cache results in memory (~6hr TTL) so playback is instant when the user taps "Trailer". WKWebView is NOT available on tvOS, so embedded YouTube iframes are not an option. Client-side innertube extraction was removed due to persistent bot detection, auth failures, and codec issues
 39. Scroll position restoration when returning from detail views
 40. Top Shelf Image assets for Apple TV home screen
 
