@@ -7,7 +7,7 @@
 - **Repo:** `~/playground/curator` (push to `github.com/derryl/curator`)
 - **Platform:** tvOS 17+ (SwiftUI, Swift 6)
 - **Distribution:** TestFlight
-- **Dependencies:** Zero third-party SPM packages (URLSession, AsyncImage, Keychain APIs only)
+- **Dependencies:** TVVLCKit (via vlckit-spm SPM package) for in-app trailer playback of VP9/WebM streams; all other functionality uses Apple frameworks only (URLSession, AsyncImage, Keychain APIs)
 
 ---
 
@@ -168,7 +168,8 @@ Curator/
 │   │   ├── MediaShelfView.swift             # Horizontal ScrollView + LazyHStack + .focusSection()
 │   │   ├── ShelfHeaderView.swift            # Title + "See All" button
 │   │   ├── DeviceCodeView.swift             # Shows Trakt code + URL prominently
-│   │   ├── YouTubePlayerView.swift          # TrailerPlayer + AVPlayerViewController + YouTubeStreamExtractor (codec filtering, cascading quality, error UI)
+│   │   ├── YouTubePlayerView.swift          # TrailerPlayer — opens YouTube app externally (to be replaced by VLCPlayerView for in-app playback)
+│   │   ├── VLCPlayerView.swift             # VLCKit-based player for streaming VP9/WebM/H.264 from yt-dlp backend (Phase 6)
 │   │   ├── LoadingView.swift
 │   │   └── ErrorView.swift                  # Error state with retry button
 │   │
@@ -273,7 +274,7 @@ Sections:
 **MovieDetailView / TVDetailView:**
 - Hero: full-width backdrop + poster + title + year + runtime + genres
 - Action buttons row: Trailer button + Request quality buttons (or StatusPill when requested/available)
-- Trailer button opens YouTube app externally (in-app playback via yt-dlp backend planned for Phase 6)
+- Trailer button currently opens YouTube app externally; in-app playback via yt-dlp backend + VLCKit planned (Phase 6)
 - Overview text
 - Cast/crew horizontal scroll
 - "You Might Like" shelf (merged similar + recommended, genre-filtered)
@@ -376,7 +377,7 @@ Device Code OAuth 2.0 — ideal for TV (no keyboard-heavy entry):
 28. ~~App icon~~ -- Custom icon with improved cropping
 29. TestFlight build and distribution
 30. "See All" paginated grid views (deferred from Phase 3)
-31. Trailer playback -- Currently opens YouTube app externally. In-app playback via yt-dlp backend planned (see Phase 6)
+31. In-app trailer playback -- Currently opens YouTube app externally. In-app playback via yt-dlp backend + VLCKit in progress (see Phase 6)
 32. ~~Status pill placement~~ -- Moved inline with hero action buttons (replaces request buttons when status active)
 
 ### Phase 6: Future Opportunities
@@ -385,7 +386,28 @@ Device Code OAuth 2.0 — ideal for TV (no keyboard-heavy entry):
 35. Region/language picker in Settings for content filtering
 36. Deep link support (Siri, URL schemes)
 37. Background refresh for request status polling
-38. In-app trailer playback via yt-dlp backend — Spin up a lightweight web server (e.g. FastAPI + yt-dlp) that resolves YouTube stream URLs on demand. The app calls the server to get a direct MP4 URL, then plays it with AVPlayer. Pre-fetch the stream URL on detail view load (resolution takes 5-10s) and cache results in memory (~6hr TTL) so playback is instant when the user taps "Trailer". WKWebView is NOT available on tvOS, so embedded YouTube iframes are not an option. Client-side innertube extraction was removed due to persistent bot detection, auth failures, and codec issues
+38. In-app trailer playback via yt-dlp backend + VLCKit
+
+    **Architecture:** A lightweight backend service running `yt-dlp` resolves YouTube trailer URLs on demand. The tvOS app streams the resolved URL directly using TVVLCKit, which supports VP9/WebM natively — no server-side transcoding or muxing required.
+
+    **Backend (hosted on media server — i5-13400, 32GB RAM):**
+    - Single endpoint: `GET /resolve?url=<youtube_url>` returns a direct CDN stream URL
+    - Uses `yt-dlp -g -f "best"` to resolve the highest-quality stream available (typically 4K VP9/WebM)
+    - No downloading, muxing, or transcoding — just URL resolution (~2-5s)
+    - Optional: memory cache with ~6hr TTL so repeat requests are instant
+    - Stack TBD (FastAPI, Express, or similar lightweight HTTP service)
+
+    **Client (tvOS app):**
+    - TVVLCKit (via `vlckit-spm` SPM package) handles playback of any format YouTube serves — VP9, AV1, H.264, WebM, MP4
+    - `VLCPlayerView` wraps `VLCMediaPlayer` in a `UIViewControllerRepresentable` for SwiftUI integration
+    - On detail view load, pre-fetch the stream URL so playback is instant when user taps "Trailer"
+    - Presented as fullScreenCover; Menu button dismisses
+
+    **Feasibility confirmed:** VLCKit builds for tvOS, embeds as TVVLCKit.framework, and successfully plays VP9 WebM (including 4K) on tvOS simulator. See `feat/vlckit-feasibility` branch.
+
+    **Why VLCKit over AVPlayer:** YouTube serves 1440p+ exclusively as VP9 or AV1 in WebM containers. AVFoundation cannot play VP9 at all, and only supports AV1 in MP4 containers (not WebM). Without VLCKit, the backend would need to transcode or remux every stream, adding latency and server load. With VLCKit, the backend is trivial — just resolve and return the URL.
+
+    **Previous approaches abandoned:** Client-side YouTube innertube extraction suffered from persistent bot detection, auth failures, and codec compatibility issues. Opening the YouTube app externally works but breaks the user experience.
 39. Scroll position restoration when returning from detail views
 40. Top Shelf Image assets for Apple TV home screen
 
